@@ -1,7 +1,7 @@
 <div class="form-row" id="filter-bar">
-    <div class="form-group">
-        <label for="inputcolname" class="col-sm-2 control-label">Column Name:</label>
-        <div class="col-sm-2">
+    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+        <label for="inputcolname" class="col-sm-4 control-label">Column Name:</label>
+        <div class="col-sm-8">
             <select class="form-control data-field" id="sel_colname">
                 {{#each colNames}}
                 <option value="{{this}}">{{this}}</option>
@@ -9,20 +9,32 @@
             </select>
         </div>
     </div>
-    <div class="form-group" id="skip_form">
-        <label for="inputcolname" class="col-sm-1 control-label">Interval:</label>
-        <div class="col-sm-2">
-            <input type="number" name="num" id="input_skip" class="form-control data-field" min="1" value="1" max="">
+    <span id="skip_form">
+        <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+            <label for="inputcolname" class="col-sm-2 control-label">Interval:</label>
+            <div class="col-sm-4">
+                <input type="number" name="num" id="input_skip" class="form-control data-field" min="1" value="1"
+                    max="">
+            </div>
+            <div class="col-sm-6">
+                <select class="form-control data-field" name="type" id="sel_skip">
+                    <option value="d">Days</option>
+                    <option value="h" selected="selected">Hour</option>
+                    <option value="m">Minutes</option>
+                    <option value="s">Seconds</option>
+                </select>
+            </div>
         </div>
-        <div class="col-sm-2">
-            <select class="form-control data-field" name="type" id="sel_skip">
-                <option value="d">Days</option>
-                <option value="h" selected="selected">Hour</option>
-                <option value="m">Minutes</option>
-                <option value="s">Seconds</option>
-            </select>
+        <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
+            <label for="input" class="col-sm-2 control-label">Date Range:</label>
+            <div class="col-sm-5">
+                <input type="date" name="fromdate" class="form-control data-field" value="">
+            </div>
+            <div class="col-sm-5">
+                <input type="date" name="todate" class="form-control data-field" value="">
+            </div>
         </div>
-    </div>
+    </span>
 </div>
 <br><br><br>
 <div class="row">

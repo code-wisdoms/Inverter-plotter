@@ -103,9 +103,10 @@ app.get('/page/:name', (req, res) => {
 });
 app.post('/charts', (req, res) => {
     let intervalNum = 0;
+    let where = "";
     if (req.body.num) {
         intervalNum = parseInt(req.body.num);
-        if (req.body.type && ['d', 'h', 'm'].includes(req.body.type)) {
+        if (req.body.type && ['d', 'h', 'm', 's'].includes(req.body.type)) {
             switch (req.body.type) {
                 case 'd':
                     intervalNum *= 8.64e+7;
@@ -122,7 +123,21 @@ app.post('/charts', (req, res) => {
             }
         }
     }
-    logs.select(`SELECT dated, ${req.body.col} {t}`, function (err, row) {
+    if (req.body.fromdate && req.body.todate) {
+        let date = req.body.todate.split('-');
+        date[2] = parseInt(date[2]) + 1;
+        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate).getTime()} AND ${new Date(date.join('-')).getTime()}`
+    } else {
+        if (req.body.fromdate) {
+            where += " WHERE dated >= " + new Date(req.body.fromdate).getTime()
+        }
+        if (req.body.todate) {
+            let date = req.body.todate.split('-');
+            date[2] = parseInt(date[2]) + 1;
+            where += " WHERE dated <= " + new Date(date.join('-')).getTime()
+        }
+    }
+    logs.select(`SELECT dated, ${req.body.col} {t}${where}`, function (err, row) {
         if (!err) {
             let dated = 0;
             res.json(row.filter(function (item) {
