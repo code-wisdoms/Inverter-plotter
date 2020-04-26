@@ -137,19 +137,31 @@ app.post('/charts', (req, res) => {
             where += " WHERE dated <= " + new Date(date.join('-')).getTime()
         }
     }
-    logs.select(`SELECT dated, ${req.body.col} {t}${where}`, function (err, row) {
+    logs.select(`SELECT dated, ${req.body.col} as col1 {t}${where}`, function (err, row) {
         if (!err) {
-            let dated = 0;
-            res.json(row.filter(function (item) {
-                if (item.dated > dated) {
+            let data = [],
+                dated = 0,
+                avgData = 0,
+                count = 0;
+
+            row.forEach(item => {
+                if (dated < 1) {
                     dated = parseInt(item.dated) + intervalNum;
-                    return true;
+                    data.push(Object.values(item));
+                } else if (item.dated > dated) {
+                    dated = parseInt(item.dated) + intervalNum;
+                    avgData += parseInt(item.col1);
+                    count++;
+                    item.col1 = avgData / count;
+                    data.push(Object.values(item));
+                    avgData = 0;
+                    count = 0;
                 } else {
-                    return false;
+                    avgData += parseInt(item.col1);
+                    count++;
                 }
-            }).map((item) => {
-                return Object.values(item);
-            }));
+            });
+            res.json(data);
         } else {
             res.json({
                 status: 'error',
