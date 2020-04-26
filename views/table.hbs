@@ -1,0 +1,113 @@
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.css" />
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.js"></script>
+<table class="table table-hover" id="mydatatable">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Grid Voltage</th>
+            <th>Grid Frequency</th>
+            <th>Output Voltage</th>
+            <th>Output Frequency</th>
+            <th>Output Apparent Power</th>
+            <th>Output Active Power</th>
+            <th>Load</th>
+            <th>Bus Voltage</th>
+            <th>Battery Voltage</th>
+            <th>Battery Charge</th>
+            <th>Battery Capacity</th>
+            <th>Inverter Tempratur</th>
+            <th>PV Amps</th>
+            <th>PV Volts</th>
+            <th>PV Output Power</th>
+            <th>Battery Discharge</th>
+            <th>Inverter Mode</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+<script>
+    $('#mydatatable').DataTable({
+        "serverSide": true,
+        "searching": false,
+        'ajax': {
+            "type": "POST",
+            "url": '/table',
+        },
+        "columns": [{
+            "title": "Date",
+            "data": "dated"
+        }, {
+            "title": "Grip Voltage",
+            "data": "grid_voltage"
+        }, {
+            "title": "Grid Frequncy",
+            "data": "grid_frequncy"
+        }, {
+            "title": "Output Voltage",
+            "data": "output_voltage"
+        }, {
+            "title": "Output Frequency",
+            "data": "output_frequency"
+        }, {
+            "title": "Output Apparent Power",
+            "data": "output_apparent_power"
+        }, {
+            "title": "Output Active Power",
+            "data": "output_active_power"
+        }, {
+            "title": "Load",
+            "data": "load"
+        }, {
+            "title": "Bus Voltage",
+            "data": "bus_voltage"
+        }, {
+            "title": "Battery Voltage",
+            "data": "battery_voltage"
+        }, {
+            "title": "Battery Charge",
+            "data": "battery_charge"
+        }, {
+            "title": "Battery Capacity",
+            "data": "battery_capacity"
+        }, {
+            "title": "Inverter Temperature",
+            "data": "inverter_temp"
+        }, {
+            "title": "PV Amps",
+            "data": "PV_A"
+        }, {
+            "title": "PV Volts",
+            "data": "PV_V"
+        }, {
+            "title": "PV Output Power",
+            "data": "pv_output_power"
+        }, {
+            "title": "Battery Discharge",
+            "data": "battery_discharge"
+        }, {
+            "title": "Inverter Mode",
+            "data": "inverter_mode"
+        }]
+    });
+</script>

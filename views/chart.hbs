@@ -1,0 +1,76 @@
+<div class="form-row" id="filter-bar">
+    <div class="form-group">
+        <label for="inputcolname" class="col-sm-2 control-label">Column Name:</label>
+        <div class="col-sm-2">
+            <select class="form-control data-field" id="sel_colname">
+                {{#each colNames}}
+                <option value="{{this}}">{{this}}</option>
+                {{/each}}
+            </select>
+        </div>
+    </div>
+    <div class="form-group" id="skip_form">
+        <label for="inputcolname" class="col-sm-1 control-label">Interval:</label>
+        <div class="col-sm-2">
+            <input type="number" name="num" id="input_skip" class="form-control data-field" min="1" value="1" max="">
+        </div>
+        <div class="col-sm-2">
+            <select class="form-control data-field" name="type" id="sel_skip">
+                <option value="d">Days</option>
+                <option value="h" selected="selected">Hour</option>
+                <option value="m">Minutes</option>
+                <option value="s">Seconds</option>
+            </select>
+        </div>
+    </div>
+</div>
+<br><br><br>
+<div class="row">
+    <div id="chart_div" style="width: 80vw;height: 70vh;"></div>
+</div>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    google.charts.load('current', {
+        'packages': ['annotationchart']
+    });
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+        let name = $('#sel_colname').val();
+        let formdata = [{
+            name: 'col',
+            value: name
+        }];
+        $('#skip_form').find('.data-field').each(function (i, item) {
+            item = $(item);
+            formdata.push({
+                name: item.attr('name'),
+                value: item.val()
+            })
+        });
+        $.ajax({
+            type: "POST",
+            url: "/charts",
+            data: formdata,
+            success: function (res) {
+                var data = new google.visualization.DataTable();
+                data.addColumn('date', 'Date');
+                data.addColumn('number', name.replace(/\_/g, ' '));
+                data.addRows(res.map((item) => {
+                    item[0] = new Date(item[0]);
+                    return item;
+                }));
+                var chart = new google.visualization.AnnotationChart(document.getElementById(
+                    'chart_div'));
+                var options = {
+                    displayAnnotations: true,
+                    displayZoomButtons: false
+                };
+                chart.draw(data, options);
+            }
+        });
+    }
+    $('#filter-bar').on('change', '.data-field', function () {
+        drawChart();
+    });
+</script>
