@@ -43,7 +43,7 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.get('/', (req, res) => {
-    res.render('home');
+    res.redirect('table');
 });
 app.get('/csv', (req, res) => {
     res.render('csv');
@@ -103,8 +103,17 @@ app.post('/table', (req, res) => {
         }
     });
 });
-app.post('/upload', uploadfile.single('logfile'), (req, res) => {
-    processLogs(req.file.path);
+app.all('/upload', (req, res) => {
+    if (req.body && req.body.password && req.body.password == config.password) {
+        res.render('upload');
+    } else {
+        res.render('password', {
+            retry: (req.body && req.body.password)
+        });
+    }
+});
+app.post('/uploadfiles', uploadfile.array('logfile[]'), (req, res) => {
+    processLogs(req.files);
     res.json({
         status: 'success'
     });
@@ -210,24 +219,28 @@ app.listen(config.port, function () {
     console.log(`Server started at ${config.domain}:${config.port}`);
 });
 
-function processLogs(file) {
-    let lineCount = 0;
-    let wStream = fs.createWriteStream(file + "b", {
-        encoding: "utf8"
-    });
-    let lineReader = require('readline').createInterface({
-        input: fs.createReadStream(file)
-    });
-    lineReader.on('line', function (line) {
-        let data = line.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
-        let date = new Date(data.splice(0, 2)).getTime();
-        data.push(date);
-        wStream.write(JSON.stringify(data) + "\r\n");
-        lineCount++;
-    });
-    lineReader.on('close', () => {
-        fs.unlink(file, () => {});
-        logs.processfile(file + "b", lineCount);
+function processLogs(files) {
+    logs.setTotalFileNum(files.length);
+    files.forEach((fileObj, i) => {
+        let lineCount = 0;
+        let file = __dirname + '/' + fileObj.path + 'b';
+        let wStream = fs.createWriteStream(file, {
+            encoding: "utf8"
+        });
+        let lineReader = require('readline').createInterface({
+            input: fs.createReadStream(__dirname + '/' + fileObj.path)
+        });
+        lineReader.on('line', function (line) {
+            let data = line.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
+            let date = new Date(data.splice(0, 2)).getTime();
+            data.push(date);
+            wStream.write(JSON.stringify(data) + "\r\n");
+            lineCount++;
+        });
+        lineReader.on('close', () => {
+            fs.unlink(__dirname + '/' + fileObj.path, () => {});
+            logs.processfile(file, lineCount);
+        });
     });
 }
 

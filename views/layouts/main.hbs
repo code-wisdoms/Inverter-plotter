@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="">
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -20,6 +21,7 @@
         integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous">
     </script>
 </head>
+
 <body>
     <nav class="navbar navbar-default">
         <div class="container-fluid">
@@ -28,9 +30,16 @@
             </div>
             <ul class="nav navbar-nav">
                 <li{{!--  class="active" --}}><a href="/">Home</a></li>
-                <li><a href="/csv">Convert CSV</a></li>
-                <li><a href="/chart">Charts</a></li>
-                <li><a href="/table">Table</a></li>
+                    <li><a href="/chart">Charts</a></li>
+                    <li><a href="/table">Table</a></li>
+                    <li><a href="/upload">Upload Logs</a></li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Tools
+                            <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/csv">Convert Log to CSV</a></li>
+                        </ul>
+                    </li>
             </ul>
         </div>
     </nav>
@@ -38,4 +47,5 @@
         {{{body}}}
     </div>
 </body>
+
 </html>

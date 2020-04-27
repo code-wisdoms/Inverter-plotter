@@ -8,7 +8,8 @@
             <form enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="">Browse</label>
-                    <input type="file" class="form-control" id="" name="logfile" placeholder="Input field">
+                    <input type="file" class="form-control" id="" name="logfile[]" placeholder="Input field"
+                        multiple="multiple" accept=".log">
                 </div>
                 <button type="submit" class="btn btn-primary">Submit</button>
             </form>
@@ -19,7 +20,8 @@
                     0%
                 </div>
             </div>
-            <div><span class="rowCount"></span> rows added to database</div>
+            <div><span class="rowCount">0</span> rows added to database</div>
+            <div>Processing <span class="filesCount">0</span> files</div>
         </div>
     </div>
     <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
@@ -43,7 +45,7 @@
         e.stopPropagation();
         $.ajax({
             type: 'POST',
-            url: "/upload",
+            url: "/uploadfiles",
             enctype: 'multipart/form-data',
             data: new FormData(this),
             processData: false,
@@ -63,7 +65,7 @@
         $form.closest('#formDiv').hide();
         $prog = $('#progDiv');
         $prog.show();
-        timer($prog, 5000);
+        timer($prog, 3000);
     }
 
     function timer($prog, t) {
@@ -76,7 +78,8 @@
                         $prog.find('.progress-bar').css('width', res.percentage + '%');
                         $prog.find('.progress-bar').text(res.percentage + '%');
                         $prog.find('span.rowCount').text(res.current + ' of ' + res.total);
-                        if (res.complete) {
+                        $prog.find('span.filesCount').text(res.remainingFiles + ' of ' + res.totalFiles);
+                        if (res.complete && !res.totalFiles) {
                             $prog.find('span.rowCount').text(
                                 "Process finished! All");
                         } else {
@@ -85,6 +88,6 @@
                     }
                 }
             });
-        }, t || 1000);
+        }, t || 500);
     }
 </script>
