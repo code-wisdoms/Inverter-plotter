@@ -1,10 +1,17 @@
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+<style>
+    ul.select2-selection__rendered {
+        font-size: 12px;
+    }
+</style>
 <div class="form-row" id="filter-bar">
     <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
         <label for="inputcolname" class="col-sm-4 control-label">Column Name:</label>
         <div class="col-sm-8">
-            <select class="form-control data-field" id="sel_colname">
+            <select class="form-control data-field" id="sel_colname" multiple="multiple">
                 {{#each colNames}}
-                <option value="{{this}}">{{this}}</option>
+                <option value="{{this}}" {{#if_equal @index 0}}selected="selected" {{/if_equal}}>{{this}}</option>
                 {{/each}}
             </select>
         </div>
@@ -38,21 +45,27 @@
 </div>
 <br><br><br>
 <div class="row">
-    <div id="chart_div" style="width: 80vw;height: 70vh;"></div>
+    <div id="chart_div" style="width: 95%;height: 70vh;"></div>
 </div>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript">
+    $(document).ready(function () {
+        $('#sel_colname').select2();
+    });
     google.charts.load('current', {
         'packages': ['annotationchart']
     });
     google.charts.setOnLoadCallback(drawChart);
 
     function drawChart() {
-        let name = $('#sel_colname').val();
-        let formdata = [{
-            name: 'col',
-            value: name
-        }];
+        let formdata = [];
+        let names = $('#sel_colname').val();
+        names.forEach(function (item) {
+            formdata.push({
+                name: 'cols[]',
+                value: item
+            });
+        });
         $('#skip_form').find('.data-field').each(function (i, item) {
             item = $(item);
             formdata.push({
@@ -67,7 +80,9 @@
             success: function (res) {
                 var data = new google.visualization.DataTable();
                 data.addColumn('date', 'Date');
-                data.addColumn('number', name.replace(/\_/g, ' '));
+                names.forEach(function (item) {
+                    data.addColumn('number', item.replace(/\_/g, ' '));
+                });
                 data.addRows(res.map((item) => {
                     item[0] = new Date(item[0]);
                     return item;
@@ -83,6 +98,8 @@
         });
     }
     $('#filter-bar').on('change', '.data-field', function () {
-        drawChart();
+        if ($('#sel_colname').val()) {
+            drawChart();
+        }
     });
 </script>

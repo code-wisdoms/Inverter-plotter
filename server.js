@@ -25,7 +25,16 @@ app.engine('hbs', handlebars({
     layoutsDir: __dirname + '/views/layouts',
     partialsDir: __dirname + '/views/partials',
     extname: '.hbs',
-    defaultLayout: 'main'
+    defaultLayout: 'main',
+    helpers: {
+        if_equal: function (a, b, opts) {
+            if (a == b) {
+                return opts.fn(this)
+            } else {
+                return opts.inverse(this)
+            }
+        }
+    }
 }));
 app.set('view engine', 'hbs');
 app.use(express.static('public'))
@@ -137,29 +146,48 @@ app.post('/charts', (req, res) => {
             where += " WHERE dated <= " + new Date(date.join('-')).getTime()
         }
     }
-    logs.select(`SELECT dated, ${req.body.col} as col1 {t}${where}`, function (err, row) {
+    let cols = "";
+    let totalCols = 0;
+    req.body.cols.forEach((item, ix) => {
+        totalCols++;
+        cols += ` ${item} as col${ix+1},`;
+    });
+
+    logs.select(`SELECT dated,${cols.replace(/\,$/g,'')} {t}${where}`, function (err, row) {
         if (!err) {
             let data = [],
                 dated = 0,
-                avgData = 0,
+                avgData = {},
                 count = 0;
 
             row.forEach(item => {
-                if (dated < 1) {
+                if (item.dated > dated) {
                     dated = parseInt(item.dated) + intervalNum;
-                    data.push(Object.values(item));
-                } else if (item.dated > dated) {
-                    dated = parseInt(item.dated) + intervalNum;
-                    avgData += parseInt(item.col1);
+                    for (let index = 1; index <= totalCols; index++) {
+                        if (!avgData['col' + index]) {
+                            avgData['col' + index] = 0;
+                        }
+                        avgData['col' + index] += parseInt(item['col' + index]);
+                    }
                     count++;
-                    item.col1 = avgData / count;
+
+                    for (let index = 1; index <= totalCols; index++) {
+                        item['col' + index] = avgData['col' + index] / count;
+                    }
+
                     data.push(Object.values(item));
-                    avgData = 0;
+                    avgData = [];
                     count = 0;
                 } else {
-                    avgData += parseInt(item.col1);
+                    for (let index = 1; index <= totalCols; index++) {
+                        if (!avgData['col' + index]) {
+                            avgData['col' + index] = 0;
+                        }
+                        avgData['col' + index] += parseInt(item['col' + index]);
+                    }
                     count++;
-                }
+                };
+
             });
             res.json(data);
         } else {
