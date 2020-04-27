@@ -20,6 +20,8 @@ const config = require('./lib/config'),
     uploadfile = multer({
         storage: storage
     });
+
+let csrfToken = 0;
 let app = express();
 app.engine('hbs', handlebars({
     layoutsDir: __dirname + '/views/layouts',
@@ -105,7 +107,10 @@ app.post('/table', (req, res) => {
 });
 app.all('/upload', (req, res) => {
     if (req.body && req.body.password && req.body.password == config.password) {
-        res.render('upload');
+        csrfToken = makeid(10);
+        res.render('upload', {
+            token: csrfToken
+        });
     } else {
         res.render('password', {
             retry: (req.body && req.body.password)
@@ -113,10 +118,18 @@ app.all('/upload', (req, res) => {
     }
 });
 app.post('/uploadfiles', uploadfile.array('logfile[]'), (req, res) => {
-    processLogs(req.files);
-    res.json({
-        status: 'success'
-    });
+    if (req.body.token == csrfToken) {
+        csrfToken = 0;
+        processLogs(req.files);
+        res.json({
+            status: 'success'
+        });
+    } else {
+        res.json({
+            status: 'error',
+            message: 'invalid request'
+        });
+    }
 });
 app.get('/page/:name', (req, res) => {
     res.sendFile(__dirname + '/views/pages/' + req.params.name + '.html');
@@ -266,4 +279,14 @@ function logsToCSV(file, callback) {
         fs.unlink(file, () => {});
         callback(csvFile);
     });
+}
+
+function makeid(length) {
+    var result = '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
 }

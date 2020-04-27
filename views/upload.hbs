@@ -11,6 +11,9 @@
                     <input type="file" class="form-control" id="" name="logfile[]" placeholder="Input field"
                         multiple="multiple" accept=".log">
                 </div>
+
+                <input type="hidden" name="token" class="form-control" value="{{token}}">
+
                 <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
@@ -54,6 +57,8 @@
             success: function (res) {
                 if (res.status == 'success') {
                     runProgress($('form'));
+                }else{
+                    alert(res.message)
                 }
             }
         })
@@ -78,7 +83,8 @@
                         $prog.find('.progress-bar').css('width', res.percentage + '%');
                         $prog.find('.progress-bar').text(res.percentage + '%');
                         $prog.find('span.rowCount').text(res.current + ' of ' + res.total);
-                        $prog.find('span.filesCount').text(res.remainingFiles + ' of ' + res.totalFiles);
+                        $prog.find('span.filesCount').text(res.remainingFiles + ' of ' +
+                         res.totalFiles);
                         if (res.complete && !res.totalFiles) {
                             $prog.find('span.rowCount').text(
                                 "Process finished! All");
