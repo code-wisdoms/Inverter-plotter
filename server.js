@@ -57,8 +57,10 @@ app.post('/csv', uploadfile.single('logfile'), (req, res) => {
     });
 });
 app.get('/chart', (req, res) => {
+    let d = new Date();
     res.render('chart', {
-        colNames: config.colNames
+        colNames: config.colNames,
+        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`
     });
 });
 app.get('/table', (req, res) => {
