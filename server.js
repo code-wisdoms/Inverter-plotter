@@ -9,6 +9,7 @@ const config = require('./lib/config'),
     bodyParser = require('body-parser'),
     logs = require('./lib/logs'),
     fs = require('fs'),
+    utils = require('./lib/utils'),
     storage = multer.diskStorage({
         destination: function (req, file, cb) {
             cb(null, "./temp");
@@ -20,8 +21,13 @@ const config = require('./lib/config'),
     uploadfile = multer({
         storage: storage
     });
+let csrfToken = [];
 
-let csrfToken = 0;
+//visit logger
+var logStream = fs.createWriteStream('visitor_log.txt', {
+    flags: 'a'
+});
+
 let app = express();
 app.engine('hbs', handlebars({
     layoutsDir: __dirname + '/views/layouts',
@@ -44,19 +50,55 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(function (req, res, next) {
+    if (req.headers["x-forwarded-for"]) {
+        let list = req.headers["x-forwarded-for"].split(",");
+        req.userId = list[list.length - 1].replace(/\.+/g, '');
+        utils.get_ip_details(list[list.length - 1], function (data) {
+            if (data) {
+                logStream.write(`[${new Date().toLocaleString()}]: ${list[list.length - 1]} - ${data}\t\n`);
+            }
+        });
+    } else {
+        req.userId = req.connection.remoteAddress.replace(/\.+/g, '');
+        utils.get_ip_details(req.connection.remoteAddress, function (data) {
+            if (data) {
+                logStream.write(`[${new Date().toLocaleString()}]: ${req.connection.remoteAddress} - ${data}\t\n`);
+            }
+        });
+    }
+    next();
+});
 app.get('/', (req, res) => {
     res.redirect('table');
 });
-app.get('/csv', (req, res) => {
-    res.render('csv');
+app.all('/csv', (req, res) => {
+    if (req.body && req.body.password && req.body.password == config.password) {
+        csrfToken[req.userId] = utils.makeid(25);
+        res.render('csv', {
+            token: csrfToken[req.userId]
+        });
+    } else {
+        res.render('password', {
+            retry: (req.body && req.body.password)
+        });
+    }
 });
-app.post('/csv', uploadfile.single('logfile'), (req, res) => {
-    logsToCSV(req.file.path, (file) => {
-        res.download(__dirname + '\\' + file, file.substr(file.indexOf('\\')));
-        setTimeout(() => {
-            fs.unlinkSync(__dirname + '\\' + file);
-        }, 20000);
-    });
+app.post('/csvfile', uploadfile.single('logfile'), (req, res) => {
+    if (req.body.token == csrfToken[req.userId]) {
+        delete csrfToken[req.userId];
+        logsToCSV(req.file.path, (file) => {
+            res.download(__dirname + '\\' + file, file.substr(file.indexOf('\\')));
+            setTimeout(() => {
+                fs.unlinkSync(__dirname + '\\' + file);
+            }, 20000);
+        });
+    } else {
+        res.json({
+            status: 'error',
+            message: 'invalid request'
+        });
+    }
 });
 app.get('/chart', (req, res) => {
     let d = new Date();
@@ -107,9 +149,9 @@ app.post('/table', (req, res) => {
 });
 app.all('/upload', (req, res) => {
     if (req.body && req.body.password && req.body.password == config.password) {
-        csrfToken = makeid(10);
+        csrfToken[req.userId] = utils.makeid(25);
         res.render('upload', {
-            token: csrfToken
+            token: csrfToken[req.userId]
         });
     } else {
         res.render('password', {
@@ -118,8 +160,8 @@ app.all('/upload', (req, res) => {
     }
 });
 app.post('/uploadfiles', uploadfile.array('logfile[]'), (req, res) => {
-    if (req.body.token == csrfToken) {
-        csrfToken = 0;
+    if (req.body.token == csrfToken[req.userId]) {
+        delete csrfToken[req.userId];
         processLogs(req.files);
         res.json({
             status: 'success'
@@ -159,15 +201,15 @@ app.post('/charts', (req, res) => {
     if (req.body.fromdate && req.body.todate) {
         let date = req.body.todate.split('-');
         date[2] = parseInt(date[2]) + 1;
-        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${new Date(date.join('-')+" ").getTime()}`;        
+        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${new Date(date.join('-')+" ").getTime()}`;
     } else {
         if (req.body.fromdate) {
-            where += " WHERE dated >= " + new Date(req.body.fromdate+" ").getTime()
+            where += " WHERE dated >= " + new Date(req.body.fromdate + " ").getTime()
         }
         if (req.body.todate) {
             let date = req.body.todate.split('-');
             date[2] = parseInt(date[2]) + 1;
-            where += " WHERE dated <= " + new Date(date.join('-')+" ").getTime()
+            where += " WHERE dated <= " + new Date(date.join('-') + " ").getTime()
         }
     }
     let cols = "";
@@ -279,14 +321,4 @@ function logsToCSV(file, callback) {
         fs.unlink(file, () => {});
         callback(csvFile);
     });
-}
-
-function makeid(length) {
-    var result = '';
-    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for (var i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
 }

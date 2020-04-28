@@ -5,11 +5,12 @@
     </div>
     <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
         <div class="row" id="formDiv">
-            <form enctype="multipart/form-data" method="post">
+            <form enctype="multipart/form-data" method="post" action="/csvfile">
                 <div class="form-group">
                     <label for="">Browse</label>
                     <input type="file" class="form-control" id="" name="logfile" placeholder="Input field">
                 </div>
+                <input type="hidden" name="token" class="form-control" value="{{token}}">
                 <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
