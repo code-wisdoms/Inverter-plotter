@@ -159,15 +159,15 @@ app.post('/charts', (req, res) => {
     if (req.body.fromdate && req.body.todate) {
         let date = req.body.todate.split('-');
         date[2] = parseInt(date[2]) + 1;
-        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate).getTime()} AND ${new Date(date.join('-')).getTime()}`
+        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${new Date(date.join('-')+" ").getTime()}`;        
     } else {
         if (req.body.fromdate) {
-            where += " WHERE dated >= " + new Date(req.body.fromdate).getTime()
+            where += " WHERE dated >= " + new Date(req.body.fromdate+" ").getTime()
         }
         if (req.body.todate) {
             let date = req.body.todate.split('-');
             date[2] = parseInt(date[2]) + 1;
-            where += " WHERE dated <= " + new Date(date.join('-')).getTime()
+            where += " WHERE dated <= " + new Date(date.join('-')+" ").getTime()
         }
     }
     let cols = "";
