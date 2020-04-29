@@ -1,0 +1,74 @@
+<div class="form-row" id="filter-bar">
+    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+        <label for="inputcolname" class="col-sm-4 control-label">Column Name:</label>
+        <div class="col-sm-8">
+            <select class="form-control data-field" id="sel_colname">
+                {{#each colNames}}
+                <option value="{{this}}" {{#if_equal @index 0}}selected="selected" {{/if_equal}}>{{this}}</option>
+                {{/each}}
+            </select>
+        </div>
+    </div>
+    <span id="skip_form">
+        <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+            <label for="input" class="col-sm-2 control-label">Date Range:</label>
+            <div class="col-sm-5">
+                <input type="date" name="fromdate" class="form-control data-field" value="{{prevWeek}}">
+            </div>
+            <div class="col-sm-5">
+                <input type="date" name="todate" class="form-control data-field" value="{{todaysDate}}">
+            </div>
+        </div>
+    </span>
+</div>
+<br><br><br>
+<div class="row">
+    <div id="chart_div" style="width: 95%;height: 70vh;"></div>
+</div>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    google.charts.load('current', {
+        'packages': ['corechart']
+    });
+    google.charts.setOnLoadCallback(drawChart);
+    function drawChart() {
+        let formdata = [];
+        formdata.push({
+            name: 'col',
+            value: $('#sel_colname').val()
+        }, {
+            name: 'min',
+            value: 'true'
+        }, {
+            name: 'max',
+            value: 'true'
+        });
+        $('#skip_form').find('.data-field').each(function (i, item) {
+            item = $(item);
+            formdata.push({
+                name: item.attr('name'),
+                value: item.val()
+            })
+        });
+        $.ajax({
+            type: "POST",
+            data: formdata,
+            success: function (res) {
+                var data = google.visualization.arrayToDataTable(res.map(function (item) {
+                    item = Object.values(item);
+                    return [item[0], item[1], item[1], item[2], item[2]]
+                }), true);
+                var options = {
+                    legend: 'none',
+                };
+                var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));
+                chart.draw(data, options);
+            }
+        });
+    }
+    $('#filter-bar').on('change', '.data-field', function () {
+        if ($('#sel_colname').val()) {
+            drawChart();
+        }
+    });
+</script>

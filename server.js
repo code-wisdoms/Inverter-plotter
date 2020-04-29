@@ -100,13 +100,6 @@ app.post('/csvfile', uploadfile.single('logfile'), (req, res) => {
         });
     }
 });
-app.get('/chart', (req, res) => {
-    let d = new Date();
-    res.render('chart', {
-        colNames: config.colNames,
-        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`
-    });
-});
 app.get('/table', (req, res) => {
     res.render('table');
 });
@@ -176,7 +169,103 @@ app.post('/uploadfiles', uploadfile.array('logfile[]'), (req, res) => {
 app.get('/page/:name', (req, res) => {
     res.sendFile(__dirname + '/views/pages/' + req.params.name + '.html');
 });
-app.post('/charts', (req, res) => {
+app.get('/chart-bar', (req, res) => {
+    let d = new Date();
+    let obj = {
+        colNames: config.colNames,
+        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`
+    };
+    d.setDate(d.getDate() - 7);
+    obj.prevWeek = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`;
+
+    res.render('chart-bar', obj);
+});
+app.post('/chart-bar', (req, res) => {
+    let where = `SELECT strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded,`;
+    req.body.cols.forEach((col, i) => {
+        where += ` round(${req.body.type}(${col})) as col${i+1},`;
+    });
+    where = where.replace(/\,$/g, '');
+    where += " FROM logs";
+    if (req.body.fromdate && req.body.todate) {
+        let date = req.body.todate.split('-');
+        date[2] = parseInt(date[2]) + 1;
+        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${new Date(date.join('-')+" ").getTime()}`;
+    } else {
+        if (req.body.fromdate) {
+            where += " WHERE dated >= " + new Date(req.body.fromdate + " ").getTime()
+        }
+        if (req.body.todate) {
+            let date = req.body.todate.split('-');
+            date[2] = parseInt(date[2]) + 1;
+            where += " WHERE dated <= " + new Date(date.join('-') + " ").getTime()
+        }
+    }
+    where += " GROUP BY CAST(dateAdded AS DATE) ORDER BY dated ASC;";
+
+    logs.select(where, function (err, row) {
+        if (!err) {
+            res.json(row);
+        } else {
+            res.json({
+                status: 'error',
+                message: err
+            });
+        }
+    });
+});
+app.get('/chart-candle', (req, res) => {
+    let d = new Date();
+    let obj = {
+        colNames: config.colNames,
+        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`
+    };
+    d.setDate(d.getDate() - 7);
+    obj.prevWeek = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`;
+
+    res.render('chart-candle', obj);
+});
+app.post('/chart-candle', (req, res) => {
+    let where = `SELECT
+                strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded,
+                MIN(${req.body.col}) AS min,
+                MAX(${req.body.col}) AS max
+                FROM logs`;
+
+    if (req.body.fromdate && req.body.todate) {
+        let date = req.body.todate.split('-');
+        date[2] = parseInt(date[2]) + 1;
+        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${new Date(date.join('-')+" ").getTime()}`;
+    } else {
+        if (req.body.fromdate) {
+            where += " WHERE dated >= " + new Date(req.body.fromdate + " ").getTime()
+        }
+        if (req.body.todate) {
+            let date = req.body.todate.split('-');
+            date[2] = parseInt(date[2]) + 1;
+            where += " WHERE dated <= " + new Date(date.join('-') + " ").getTime()
+        }
+    }
+    where += " GROUP BY CAST(dateAdded AS DATE) ORDER BY dated ASC;";
+    logs.select(where, function (err, row) {
+        if (!err) {
+            res.json(row);
+        } else {
+            res.json({
+                status: 'error',
+                message: err
+            });
+        }
+    });
+});
+app.get('/chart-ann', (req, res) => {
+    let d = new Date();
+    res.render('chart-ann', {
+        colNames: config.colNames,
+        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`
+    });
+});
+app.post('/chart-ann', (req, res) => {
     let intervalNum = 0;
     let where = "";
     if (req.body.num) {

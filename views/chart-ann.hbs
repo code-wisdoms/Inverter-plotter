@@ -1,0 +1,104 @@
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+<style>
+    ul.select2-selection__rendered {
+        font-size: 12px;
+    }
+</style>
+<div class="form-row" id="filter-bar">
+    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+        <label for="inputcolname" class="col-sm-4 control-label">Column Name:</label>
+        <div class="col-sm-8">
+            <select class="form-control data-field" id="sel_colname" multiple="multiple">
+                {{#each colNames}}
+                <option value="{{this}}" {{#if_equal @index 0}}selected="selected" {{/if_equal}}>{{this}}</option>
+                {{/each}}
+            </select>
+        </div>
+    </div>
+    <span id="skip_form">
+        <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+            <label for="inputcolname" class="col-sm-2 control-label">Interval:</label>
+            <div class="col-sm-4">
+                <input type="number" name="num" id="input_skip" class="form-control data-field" min="1" value="1"
+                    max="">
+            </div>
+            <div class="col-sm-6">
+                <select class="form-control data-field" name="type" id="sel_skip">
+                    <option value="d">Days</option>
+                    <option value="h" selected="selected">Hour</option>
+                    <option value="m">Minutes</option>
+                    <option value="s">Seconds</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
+            <label for="input" class="col-sm-2 control-label">Date Range:</label>
+            <div class="col-sm-5">
+                <input type="date" name="fromdate" class="form-control data-field" value="{{todaysDate}}">
+            </div>
+            <div class="col-sm-5">
+                <input type="date" name="todate" class="form-control data-field" value="{{todaysDate}}">
+            </div>
+        </div>
+    </span>
+</div>
+<br><br><br>
+<div class="row">
+    <div id="chart_div" style="width: 95%;height: 70vh;"></div>
+</div>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#sel_colname').select2();
+    });
+    google.charts.load('current', {
+        'packages': ['annotationchart']
+    });
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+        let formdata = [];
+        let names = $('#sel_colname').val();
+        names.forEach(function (item) {
+            formdata.push({
+                name: 'cols[]',
+                value: item
+            });
+        });
+        $('#skip_form').find('.data-field').each(function (i, item) {
+            item = $(item);
+            formdata.push({
+                name: item.attr('name'),
+                value: item.val()
+            })
+        });
+        $.ajax({
+            type: "POST",
+            data: formdata,
+            success: function (res) {
+                var data = new google.visualization.DataTable();
+                data.addColumn('date', 'Date');
+                names.forEach(function (item) {
+                    data.addColumn('number', item.replace(/\_/g, ' '));
+                });
+                data.addRows(res.map((item) => {
+                    item[0] = new Date(item[0]);
+                    return item;
+                }));
+                var chart = new google.visualization.AnnotationChart(document.getElementById(
+                    'chart_div'));
+                var options = {
+                    displayAnnotations: true,
+                    displayZoomButtons: false
+                };
+                chart.draw(data, options);
+            }
+        });
+    }
+    $('#filter-bar').on('change', '.data-field', function () {
+        if ($('#sel_colname').val()) {
+            drawChart();
+        }
+    });
+</script>

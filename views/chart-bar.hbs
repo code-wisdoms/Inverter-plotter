@@ -18,24 +18,19 @@
     </div>
     <span id="skip_form">
         <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
-            <label for="inputcolname" class="col-sm-2 control-label">Interval:</label>
-            <div class="col-sm-4">
-                <input type="number" name="num" id="input_skip" class="form-control data-field" min="1" value="1"
-                    max="">
-            </div>
-            <div class="col-sm-6">
+            <label for="inputcolname" class="col-sm-4 control-label">Plot:</label>
+            <div class="col-sm-8">
                 <select class="form-control data-field" name="type" id="sel_skip">
-                    <option value="d">Days</option>
-                    <option value="h" selected="selected">Hour</option>
-                    <option value="m">Minutes</option>
-                    <option value="s">Seconds</option>
+                    <option value="AVG">Average</option>
+                    <option value="MAX">Max</option>
+                    <option value="MIN">Min</option>
                 </select>
             </div>
         </div>
         <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
             <label for="input" class="col-sm-2 control-label">Date Range:</label>
             <div class="col-sm-5">
-                <input type="date" name="fromdate" class="form-control data-field" value="{{todaysDate}}">
+                <input type="date" name="fromdate" class="form-control data-field" value="{{prevWeek}}">
             </div>
             <div class="col-sm-5">
                 <input type="date" name="todate" class="form-control data-field" value="{{todaysDate}}">
@@ -53,7 +48,7 @@
         $('#sel_colname').select2();
     });
     google.charts.load('current', {
-        'packages': ['annotationchart']
+        'packages': ['bar']
     });
     google.charts.setOnLoadCallback(drawChart);
 
@@ -75,25 +70,24 @@
         });
         $.ajax({
             type: "POST",
-            url: "/charts",
             data: formdata,
             success: function (res) {
-                var data = new google.visualization.DataTable();
-                data.addColumn('date', 'Date');
-                names.forEach(function (item) {
-                    data.addColumn('number', item.replace(/\_/g, ' '));
+                row1 = ['Date'];
+                names.forEach(col => {
+                    row1.push(col);
                 });
-                data.addRows(res.map((item) => {
-                    item[0] = new Date(item[0]);
-                    return item;
-                }));
-                var chart = new google.visualization.AnnotationChart(document.getElementById(
-                    'chart_div'));
-                var options = {
-                    displayAnnotations: true,
-                    displayZoomButtons: false
-                };
-                chart.draw(data, options);
+                let allData = res.map(function (item) {
+                    item = Object.values(item);
+                    let rowData = [];
+                    item.forEach(function (val, i) {
+                        rowData.push(val);
+                    });
+                    return rowData;
+                });
+                allData.unshift(row1);
+                var data = google.visualization.arrayToDataTable(allData);
+                var chart = new google.charts.Bar(document.getElementById('chart_div'));
+                chart.draw(data);
             }
         });
     }
