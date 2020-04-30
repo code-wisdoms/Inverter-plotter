@@ -48,7 +48,7 @@
         $('#sel_colname').select2();
     });
     google.charts.load('current', {
-        'packages': ['bar']
+        'packages': ['corechart', 'bar']
     });
     google.charts.setOnLoadCallback(drawChart);
 
@@ -72,22 +72,38 @@
             type: "POST",
             data: formdata,
             success: function (res) {
-                row1 = ['Date'];
+                var data = new google.visualization.DataTable();
+                data.addColumn('date', 'Date');
                 names.forEach(col => {
-                    row1.push(col);
+                    data.addColumn('number', col);
                 });
                 let allData = res.map(function (item) {
                     item = Object.values(item);
+                    item[1] = new Date(item[1]);
                     let rowData = [];
                     item.forEach(function (val, i) {
                         rowData.push(val);
                     });
+                    rowData.shift();
                     return rowData;
                 });
-                allData.unshift(row1);
-                var data = google.visualization.arrayToDataTable(allData);
-                var chart = new google.charts.Bar(document.getElementById('chart_div'));
-                chart.draw(data);
+                data.addRows(allData);
+                var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+                var opts = {
+                    trendlines: {
+                        0: {
+                            type: 'linear',
+                            lineWidth: 5,
+                            opacity: .3
+                        },
+                        1: {
+                            type: 'exponential',
+                            lineWidth: 10,
+                            opacity: .3
+                        }
+                    },
+                };
+                chart.draw(data, opts);
             }
         });
     }

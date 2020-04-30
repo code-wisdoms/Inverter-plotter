@@ -181,7 +181,7 @@ app.get('/chart-bar', (req, res) => {
     res.render('chart-bar', obj);
 });
 app.post('/chart-bar', (req, res) => {
-    let where = `SELECT strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded,`;
+    let where = `SELECT strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded, dated,`;
     req.body.cols.forEach((col, i) => {
         where += ` round(${req.body.type}(${col})) as col${i+1},`;
     });
