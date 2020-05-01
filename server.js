@@ -177,7 +177,7 @@ app.post('/uploadfiles', uploadfile.array('logfile[]'), (req, res) => {
 app.get('/page/:name', (req, res) => {
     res.sendFile(__dirname + '/views/pages/' + req.params.name + '.html');
 });
-app.get('/chart-bar', (req, res) => {
+app.get('/chart/:name', (req, res) => {
 
     let obj = {
         colNames: config.colNames,
@@ -185,9 +185,9 @@ app.get('/chart-bar', (req, res) => {
         prevWeek: req.prevWeek
     };
 
-    res.render('chart-bar', obj);
+    res.render(`chart-${req.params.name}`, obj);
 });
-app.post('/chart-bar', (req, res) => {
+app.post('/chart/bar', (req, res) => {
     let where = `SELECT strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded, dated,`;
     req.body.cols.forEach((col, i) => {
         where += ` round(${req.body.type}(${col})) as col${i+1},`;
@@ -221,16 +221,7 @@ app.post('/chart-bar', (req, res) => {
         }
     });
 });
-app.get('/chart-candle', (req, res) => {
-    let obj = {
-        colNames: config.colNames,
-        todaysDate: req.todaysDate,
-        prevWeek: req.prevWeek
-    };
-
-    res.render('chart-candle', obj);
-});
-app.post('/chart-candle', (req, res) => {
+app.post('/chart/candle', (req, res) => {
     let where = `SELECT
                 strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded,
                 MIN(${req.body.col}) AS min,
@@ -263,13 +254,7 @@ app.post('/chart-candle', (req, res) => {
         }
     });
 });
-app.get('/chart-ann', (req, res) => {
-    res.render('chart-ann', {
-        colNames: config.colNames,
-        todaysDate: req.todaysDate
-    });
-});
-app.post('/chart-ann', (req, res) => {
+app.post('/chart/ann', (req, res) => {
     let intervalNum = 0;
     let where = "";
     if (req.body.num) {
