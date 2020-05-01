@@ -45,7 +45,6 @@ app.engine('hbs', handlebars({
     }
 }));
 app.set('view engine', 'hbs');
-app.use(express.static('public'))
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
@@ -67,10 +66,19 @@ app.use(function (req, res, next) {
             }
         });
     }
+    let d = new Date();
+    req.todaysDate = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${(d.getDate() < 9 ? "0" + d.getDate() : d.getDate())}`;
+    d.setDate(d.getDate() - 7);
+    req.prevWeek = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${(d.getDate() < 9 ? "0" + d.getDate() : d.getDate())}`;
+
     next();
 });
 app.get('/', (req, res) => {
     res.redirect('table');
+});
+app.get('/public/:subdir/:file', function (request, response) {
+    response.setHeader('Cache-Control', 'public, max-age=604800');
+    response.sendFile(`${__dirname}/public/${request.params.subdir}/${request.params.file}`);
 });
 app.all('/csv', (req, res) => {
     if (req.body && req.body.password && req.body.password == config.password) {
@@ -170,13 +178,12 @@ app.get('/page/:name', (req, res) => {
     res.sendFile(__dirname + '/views/pages/' + req.params.name + '.html');
 });
 app.get('/chart-bar', (req, res) => {
-    let d = new Date();
+
     let obj = {
         colNames: config.colNames,
-        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${(d.getDate() < 9 ? "0" + d.getDate() : d.getDate())}`
+        todaysDate: req.todaysDate,
+        prevWeek: req.prevWeek
     };
-    d.setDate(d.getDate() - 7);
-    obj.prevWeek = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${(d.getDate() < 9 ? "0" + d.getDate() : d.getDate())}`;
 
     res.render('chart-bar', obj);
 });
@@ -215,13 +222,11 @@ app.post('/chart-bar', (req, res) => {
     });
 });
 app.get('/chart-candle', (req, res) => {
-    let d = new Date();
     let obj = {
         colNames: config.colNames,
-        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`
+        todaysDate: req.todaysDate,
+        prevWeek: req.prevWeek
     };
-    d.setDate(d.getDate() - 7);
-    obj.prevWeek = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`;
 
     res.render('chart-candle', obj);
 });
@@ -259,10 +264,9 @@ app.post('/chart-candle', (req, res) => {
     });
 });
 app.get('/chart-ann', (req, res) => {
-    let d = new Date();
     res.render('chart-ann', {
         colNames: config.colNames,
-        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`
+        todaysDate: req.todaysDate
     });
 });
 app.post('/chart-ann', (req, res) => {
