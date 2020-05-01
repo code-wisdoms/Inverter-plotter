@@ -173,10 +173,10 @@ app.get('/chart-bar', (req, res) => {
     let d = new Date();
     let obj = {
         colNames: config.colNames,
-        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`
+        todaysDate: `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${(d.getDate() < 9 ? "0" + d.getDate() : d.getDate())}`
     };
     d.setDate(d.getDate() - 7);
-    obj.prevWeek = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${d.getDate()}`;
+    obj.prevWeek = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${(d.getDate() < 9 ? "0" + d.getDate() : d.getDate())}`;
 
     res.render('chart-bar', obj);
 });
