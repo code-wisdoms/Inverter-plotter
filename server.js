@@ -190,7 +190,11 @@ app.get('/chart/:name', (req, res) => {
 app.post('/chart/bar', (req, res) => {
     let where = `SELECT strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded, dated,`;
     req.body.cols.forEach((col, i) => {
-        where += ` round(${req.body.type}(${col})) as col${i+1},`;
+        if (req.body.type == "AVG" && ['output_apparent_power', 'output_active_power'].includes(req.body.cols[i])) {
+            where += ` (round(${req.body.type}(${col}))*24)/1000 as col${i+1},`;
+        } else {
+            where += ` round(${req.body.type}(${col})) as col${i+1},`;
+        }
     });
     where = where.replace(/\,$/g, '');
     where += " FROM logs";
@@ -317,6 +321,10 @@ app.post('/chart/ann', (req, res) => {
 
                     for (let index = 1; index <= totalCols; index++) {
                         item['col' + index] = avgData['col' + index] / count;
+                        if (
+                            req.body.type == 'd' && ['output_apparent_power', 'output_active_power'].includes(req.body.cols[index - 1])) {
+                            item['col' + index] = (item['col' + index] * 24) / 1000;
+                        }
                     }
 
                     data.push(Object.values(item));
