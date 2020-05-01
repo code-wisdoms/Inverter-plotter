@@ -49,15 +49,22 @@
         $.ajax({
             type: 'POST',
             url: "/uploadfiles",
+            beforeSend: function () {
+                $('.loader').show();
+            },
             enctype: 'multipart/form-data',
             data: new FormData(this),
             processData: false,
             contentType: false,
             cache: false,
+            error: function (jqxhr, txStatus, errThrown) {
+                alert(txStatus + errThrown);
+            },
             success: function (res) {
                 if (res.status == 'success') {
                     runProgress($('form'));
-                }else{
+                } else {
+                    $('.loader').hide();
                     alert(res.message)
                 }
             }
@@ -84,11 +91,14 @@
                         $prog.find('.progress-bar').text(res.percentage + '%');
                         $prog.find('span.rowCount').text(res.current + ' of ' + res.total);
                         $prog.find('span.filesCount').text(res.remainingFiles + ' of ' +
-                         res.totalFiles);
+                            res.totalFiles);
                         if (res.complete && !res.totalFiles) {
                             $prog.find('span.rowCount').text(
                                 "Process finished! All");
                         } else {
+                            if (t) {
+                                $('.loader').hide();
+                            }
                             timer($prog);
                         }
                     }

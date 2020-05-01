@@ -75,6 +75,15 @@
         $.ajax({
             type: "POST",
             data: formdata,
+            beforeSend: function () {
+                $('.loader').show();
+            },
+            complete: function () {
+                $('.loader').hide();
+            },
+            error: function (jqxhr, txStatus, errThrown) {
+                alert(txStatus + errThrown);
+            },
             success: function (res) {
                 var data = new google.visualization.DataTable();
                 data.addColumn('date', 'Date');

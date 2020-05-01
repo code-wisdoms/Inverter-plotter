@@ -56,6 +56,15 @@
         'ajax': {
             "type": "POST",
             "url": '/table',
+            "beforeSend": function(){
+                $('.loader').show();
+            },
+            "error": function (jqxhr, txStatus, errThrown) {
+                alert(txStatus + errThrown);
+            },
+            "complete": function(){
+                $('.loader').hide();
+            },
         },
         "columns": [{
             "title": "Date",
