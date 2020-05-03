@@ -67,9 +67,9 @@ app.use(function (req, res, next) {
         });
     }
     let d = new Date();
-    req.todaysDate = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${(d.getDate() < 9 ? "0" + d.getDate() : d.getDate())}`;
+    req.todaysDate = d.toISOString().split('T')[0];
     d.setDate(d.getDate() - 7);
-    req.prevWeek = `${d.getFullYear()}-${(d.getMonth()+1) < 9?"0"+(d.getMonth()+1):d.getMonth()+1}-${(d.getDate() < 9 ? "0" + d.getDate() : d.getDate())}`;
+    req.prevWeek = d.toISOString().split('T')[0];
 
     next();
 });
@@ -352,6 +352,27 @@ app.post('/chart/ann', (req, res) => {
 });
 app.get('/stats', (req, res) => {
     res.json(logs.progress());
+});
+app.post("/inboundlogs", (req, res) => {
+    if (req.body.secret === process.env.secret) {
+        if (req.body.ping) {
+            res.json({
+                pong: "true"
+            }).end();
+            return;
+        }
+        if (req.body.row) {
+            let data = req.body.row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
+            let date = new Date(data.splice(0, 2)).getTime();
+            data.push(date);
+            logs.insertSingle(data);
+            res.json({
+                success: true
+            });
+            return;
+        }
+    }
+    res.sendStatus(404).end();
 });
 app.all('*', (req, res) => {
     res.sendStatus(404).end();
