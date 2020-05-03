@@ -42,7 +42,7 @@ function start() {
 
 function sendRow(row) {
     request.sendToListener({
-        row: row
+        row: JSON.stringify(row)
     }, function (res, err, body) {
         if (!err && body.success) {
             if (logRows.length > 0) {
@@ -91,5 +91,5 @@ function resetAtMidnight(callback) {
 
     setTimeout(function () {
         callback();
-    }, msToMidnight);
+    }, msToMidnight + 10000);
 }

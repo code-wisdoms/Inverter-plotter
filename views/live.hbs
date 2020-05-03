@@ -1,0 +1,90 @@
+<link rel="stylesheet" href="/public/css/epoch.min.css">
+<script src="/public/js/d3.v3.min.js"></script>
+<script src="/public/js/epoch.min.js"></script>
+<style>
+    .pl-10 {
+        padding-left: 10rem;
+    }
+    .pr-2 {
+        padding-right: 2rem;
+    }
+</style>
+<div class="row mt-2">
+    <div class="row">
+        <div class="pull-right">
+            <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                Status:
+            </div>
+            <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                <svg height="50" width="50">
+                    <circle id="status-light" cx="10" cy="10" r="10" fill="red" />
+                    Sorry, your browser does not support inline SVG.
+                </svg>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="row">
+            <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+            </div>
+            <div class="col-md-3 col-lg-3 text-center pl-10">
+                <div class="row">
+                    <div id="loadGaugeChart" class="epoch gauge-medium"></div>
+                </div>
+                <div class="row pr-2">
+                    Total Load (%)
+                </div>
+            </div>
+            <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1">
+            </div>
+            <div class="col-md-3 col-lg-3 text-center pl-10">
+                <div class="row">
+                    <div id="tempGaugeChart" class="epoch gauge-medium"></div>
+                </div>
+                <div class="row pr-2">
+                    Temprature (C)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $lGC = $('#loadGaugeChart').epoch({
+        type: 'time.gauge',
+        domain: [0, 100],
+        value: 0,
+        format: function (v) {
+            return Math.round(v) + '%';
+        }
+    });
+    $tGC = $('#tempGaugeChart').epoch({
+        type: 'time.gauge',
+        domain: [0, 150],
+        value: 0,
+        format: function (v) {
+            return Math.round(v) + ' C';
+        }
+    });
+    var socket = new WebSocket("{{wsurl}}");
+    socket.onopen = function (e) {
+        $('#status-light').attr('fill','green');
+    };
+    socket.onmessage = function (event) {
+        var data = JSON.parse(event.data);
+        console.log(parseInt(data[6]), parseInt(data[11]));
+        $lGC.push(parseInt(data[6]));
+        $tGC.push(parseInt(data[11]));
+    };
+    socket.onclose = function (event) {
+        if (event.wasClean) {
+            console.log("[close] Connection closed cleanly, code="+event.code+" reason="+event.reason);
+        } else {
+            console.log('[close] Connection died');
+        }
+        $('#status-light').attr('fill','red');
+    };
+    socket.onerror = function (error) {
+        console.log("[error] "+error.message);
+        $('#status-light').attr('fill','red');
+    };
+</script>

@@ -10,6 +10,7 @@ const config = require('./lib/config'),
     logs = require('./lib/logs'),
     fs = require('fs'),
     utils = require('./lib/utils'),
+    WebSocket = require('ws'),
     storage = multer.diskStorage({
         destination: function (req, file, cb) {
             cb(null, "./temp");
@@ -29,6 +30,43 @@ var logStream = fs.createWriteStream('visitor_log.txt', {
 });
 
 let app = express();
+const server = require('http').createServer(app);
+
+server.listen(config.port, function () {
+    console.log(`Server started at ${config.domain}:${config.port}`);
+});
+const wss = new WebSocket.Server({
+    server
+});
+wss.on('connection', function connection(ws, req) {
+    ws.isAlive = true;
+    utils.get_ip_details(req.socket.remoteAddress, function (data) {
+        if (data) {
+            logStream.write(`[${new Date().toLocaleString()}]: ${req.socket.remoteAddress} - Socket - ${data}\t\n`);
+        }
+    });
+});
+const ws_interval = setInterval(function ping() {
+    wss.clients.forEach(function each(ws) {
+        if (ws.isAlive === false) return ws.terminate();
+        ws.isAlive = false;
+
+        function noop() {}
+        ws.ping(noop);
+    });
+}, 30000);
+
+wss.on('close', function close() {
+    clearInterval(ws_interval);
+});
+
+function ws_broadcast(data) {
+    wss.clients.forEach(function each(client) {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(data);
+        }
+    });
+}
 app.engine('hbs', handlebars({
     layoutsDir: __dirname + '/views/layouts',
     partialsDir: __dirname + '/views/partials',
@@ -55,14 +93,14 @@ app.use(function (req, res, next) {
         req.userId = list[list.length - 1].replace(/\.+/g, '');
         utils.get_ip_details(list[list.length - 1], function (data) {
             if (data) {
-                logStream.write(`[${new Date().toLocaleString()}]: ${list[list.length - 1]} - ${data}\t\n`);
+                logStream.write(`[${new Date().toLocaleString()}]: ${list[list.length - 1]} - HTTP - ${data}\t\n`);
             }
         });
     } else {
         req.userId = req.connection.remoteAddress.replace(/\.+/g, '');
         utils.get_ip_details(req.connection.remoteAddress, function (data) {
             if (data) {
-                logStream.write(`[${new Date().toLocaleString()}]: ${req.connection.remoteAddress} - ${data}\t\n`);
+                logStream.write(`[${new Date().toLocaleString()}]: ${req.connection.remoteAddress} - HTTP - ${data}\t\n`);
             }
         });
     }
@@ -74,7 +112,10 @@ app.use(function (req, res, next) {
     next();
 });
 app.get('/', (req, res) => {
-    res.redirect('table');
+    res.render('live', {
+        colNames: config.colNames,
+        wsurl: `ws://${config.domain}:${config.port}`
+    })
 });
 app.get('/public/:subdir/:file', function (request, response) {
     response.setHeader('Cache-Control', 'public, max-age=604800');
@@ -362,10 +403,12 @@ app.post("/inboundlogs", (req, res) => {
             return;
         }
         if (req.body.row) {
+            req.body.row = JSON.parse(req.body.row);
             let data = req.body.row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
             let date = new Date(data.splice(0, 2)).getTime();
             data.push(date);
             logs.insertSingle(data);
+            ws_broadcast(JSON.stringify(data));
             res.json({
                 success: true
             });
@@ -376,9 +419,6 @@ app.post("/inboundlogs", (req, res) => {
 });
 app.all('*', (req, res) => {
     res.sendStatus(404).end();
-});
-app.listen(config.port, function () {
-    console.log(`Server started at ${config.domain}:${config.port}`);
 });
 
 function processLogs(files) {
