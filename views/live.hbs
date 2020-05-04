@@ -5,6 +5,7 @@
     .pl-10 {
         padding-left: 10rem;
     }
+
     .pr-2 {
         padding-right: 2rem;
     }
@@ -65,26 +66,33 @@
             return Math.round(v) + ' C';
         }
     });
-    var socket = new WebSocket("{{wsurl}}");
-    socket.onopen = function (e) {
-        $('#status-light').attr('fill','green');
-    };
-    socket.onmessage = function (event) {
-        var data = JSON.parse(event.data);
-        console.log(parseInt(data[6]), parseInt(data[11]));
-        $lGC.push(parseInt(data[6]));
-        $tGC.push(parseInt(data[11]));
-    };
-    socket.onclose = function (event) {
-        if (event.wasClean) {
-            console.log("[close] Connection closed cleanly, code="+event.code+" reason="+event.reason);
-        } else {
-            console.log('[close] Connection died');
-        }
-        $('#status-light').attr('fill','red');
-    };
-    socket.onerror = function (error) {
-        console.log("[error] "+error.message);
-        $('#status-light').attr('fill','red');
-    };
+
+    function connect() {
+        var socket = new WebSocket("{{wsurl}}");
+        socket.onopen = function (e) {
+            $('#status-light').attr('fill', 'green');
+            socket.send("Client connected");
+        };
+        socket.onmessage = function (event) {
+            var data = JSON.parse(event.data);
+            $lGC.push(parseInt(data[6]));
+            $tGC.push(parseInt(data[11]));
+        };
+        socket.onclose = function (event) {
+            if (event.wasClean) {
+                console.log("[close] Connection closed cleanly, code=" + event.code + " reason=" + event.reason);
+            } else {
+                console.log('[close] Connection died');
+            }
+            setTimeout(function () {
+                connect();
+            }, 1000);
+            $('#status-light').attr('fill', 'red');
+        };
+        socket.onerror = function (error) {
+            console.log("[error] " + error.message);
+            $('#status-light').attr('fill', 'red');
+        };
+    }
+    connect();
 </script>

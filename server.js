@@ -45,6 +45,9 @@ wss.on('connection', function connection(ws, req) {
             logStream.write(`[${new Date().toLocaleString()}]: ${req.socket.remoteAddress} - Socket - ${data}\t\n`);
         }
     });
+    ws.on('message', function (data) {
+        logStream.write(`[${new Date().toLocaleString()}]:[Socket][MESSAGE] - ${data}\t\n`);
+    });
 });
 const ws_interval = setInterval(function ping() {
     wss.clients.forEach(function each(ws) {
@@ -55,11 +58,9 @@ const ws_interval = setInterval(function ping() {
         ws.ping(noop);
     });
 }, 30000);
-
 wss.on('close', function close() {
     clearInterval(ws_interval);
 });
-
 function ws_broadcast(data) {
     wss.clients.forEach(function each(client) {
         if (client.readyState === WebSocket.OPEN) {
