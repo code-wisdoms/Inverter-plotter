@@ -23,7 +23,8 @@ request.sendToListener({
 });
 
 function start() {
-    let filename = `${logFilesPath}\\${new Date().toISOString().split("T")[0]} QPIGS.log`;
+    let newDate = new Date();
+    let filename = `${logFilesPath}\\${`${newDate.getFullYear()}-${(newDate.getMonth()+1)<9?"0"+(newDate.getMonth()+1):newDate.getMonth()}-${(newDate.getDate()+1)<9?"0"+newDate.getDate():newDate.getDate()}`} QPIGS.log`;
     tailMain = startTail(filename);
 
     resetAtMidnight(function () {
