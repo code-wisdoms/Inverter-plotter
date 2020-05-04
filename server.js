@@ -10,7 +10,6 @@ const config = require('./lib/config'),
     logs = require('./lib/logs'),
     fs = require('fs'),
     utils = require('./lib/utils'),
-    WebSocket = require('ws'),
     storage = multer.diskStorage({
         destination: function (req, file, cb) {
             cb(null, "./temp");
@@ -30,43 +29,25 @@ var logStream = fs.createWriteStream('visitor_log.txt', {
 });
 
 let app = express();
-const server = require('http').createServer(app);
+const server = require('http').Server(app);
 
 server.listen(config.port, function () {
     console.log(`Server started at ${config.domain}:${config.port}`);
 });
-const wss = new WebSocket.Server({
-    server
-});
-wss.on('connection', function connection(ws, req) {
-    ws.isAlive = true;
-    utils.get_ip_details(req.socket.remoteAddress, function (data) {
+const io = require('socket.io')(server);
+io.on('connection', (socket) => {
+    utils.get_ip_details(socket.handshake.address, function (data) {
         if (data) {
-            logStream.write(`[${new Date().toLocaleString()}]: ${req.socket.remoteAddress} - Socket - ${data}\t\n`);
+            logStream.write(`[${new Date().toLocaleString()}]: ${socket.handshake.address} - Socket - ${data}\t\n`);
         }
     });
-    ws.on('message', function (data) {
+    socket.on('message', function (data) {
         logStream.write(`[${new Date().toLocaleString()}]:[Socket][MESSAGE] - ${data}\t\n`);
     });
 });
-const ws_interval = setInterval(function ping() {
-    wss.clients.forEach(function each(ws) {
-        if (ws.isAlive === false) return ws.terminate();
-        ws.isAlive = false;
 
-        function noop() {}
-        ws.ping(noop);
-    });
-}, 30000);
-wss.on('close', function close() {
-    clearInterval(ws_interval);
-});
 function ws_broadcast(data) {
-    wss.clients.forEach(function each(client) {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(data);
-        }
-    });
+    io.emit('data', data);
 }
 app.engine('hbs', handlebars({
     layoutsDir: __dirname + '/views/layouts',
@@ -114,7 +95,6 @@ app.use(function (req, res, next) {
 });
 app.get('/', (req, res) => {
     res.render('live', {
-        colNames: config.colNames,
         wsurl: `ws://${config.domain}:${config.port}`
     })
 });

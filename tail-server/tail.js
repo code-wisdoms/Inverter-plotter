@@ -58,7 +58,7 @@ function sendRow(row) {
             console.log(`Error reaching listener server at ${listener.host}:${listener.port}. retrying in 3 seconds!`);
             setTimeout(() => {
                 sendRow(row);
-            }, 3000);
+            }, 30000);
         }
     })
 }
