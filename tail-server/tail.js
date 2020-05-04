@@ -24,7 +24,12 @@ request.sendToListener({
 
 function start() {
     let newDate = new Date();
-    let filename = `${logFilesPath}\\${`${newDate.getFullYear()}-${(newDate.getMonth()+1)<9?"0"+(newDate.getMonth()+1):newDate.getMonth()}-${(newDate.getDate()+1)<9?"0"+newDate.getDate():newDate.getDate()}`} QPIGS.log`;
+    let year = newDate.getFullYear();
+    let month = (newDate.getMonth() < 9) ? "0" + (newDate.getMonth() + 1) : (newDate.getMonth() + 1);
+    let day = (newDate.getDate() <= 9) ? "0" + newDate.getDate() : newDate.getDate();
+
+    let filename = `${logFilesPath}\\${`${year}-${month}-${day}`} QPIGS.log`;
+
     tailMain = startTail(filename);
 
     resetAtMidnight(function () {
