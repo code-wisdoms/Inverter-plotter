@@ -102,6 +102,10 @@ app.get('/public/:subdir/:file', function (request, response) {
     response.setHeader('Cache-Control', 'public, max-age=604800');
     response.sendFile(`${__dirname}/public/${request.params.subdir}/${request.params.file}`);
 });
+app.get('/public/:subdir/:subdir2/:file', function (request, response) {
+    response.setHeader('Cache-Control', 'public, max-age=604800');
+    response.sendFile(`${__dirname}/public/${request.params.subdir}/${request.params.subdir2}/${request.params.file}`);
+});
 app.all('/csv', (req, res) => {
     if (req.body && req.body.password && req.body.password == config.password) {
         csrfToken[req.userId] = utils.makeid(25);

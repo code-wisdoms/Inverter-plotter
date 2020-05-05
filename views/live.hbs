@@ -1,7 +1,84 @@
-<link rel="stylesheet" href="/public/css/epoch.min.css">
-<script src="/public/js/d3.v3.min.js"></script>
-<script src="/public/js/epoch.min.js"></script>
-<style>.gauge-text{margin-right:40px}.pl-10{padding-left:10rem}.pr-2{padding-right:2rem}.blinking{-webkit-animation:2s blink ease infinite;-moz-animation:2s blink ease infinite;-ms-animation:2s blink ease infinite;-o-animation:2s blink ease infinite;animation:2s blink ease infinite}@keyframes "blink"{from,to{opacity:0}50%{opacity:1}}@-moz-keyframes blink{from,to{opacity:0}50%{opacity:1}}@-webkit-keyframes "blink"{from,to{opacity:0}50%{opacity:1}}@-ms-keyframes "blink"{from,to{opacity:0}50%{opacity:1}}@-o-keyframes "blink"{from,to{opacity:0}50%{opacity:1}}</style>
+<style>
+    .gauge-text {
+        margin-right: 40px
+    }
+
+    .pl-10 {
+        padding-left: 10rem
+    }
+
+    .pr-2 {
+        padding-right: 2rem
+    }
+
+    .blinking {
+        -webkit-animation: 2s blink ease infinite;
+        -moz-animation: 2s blink ease infinite;
+        -ms-animation: 2s blink ease infinite;
+        -o-animation: 2s blink ease infinite;
+        animation: 2s blink ease infinite
+    }
+
+    @keyframes "blink" {
+
+        from,
+        to {
+            opacity: 0
+        }
+
+        50% {
+            opacity: 1
+        }
+    }
+
+    @-moz-keyframes blink {
+
+        from,
+        to {
+            opacity: 0
+        }
+
+        50% {
+            opacity: 1
+        }
+    }
+
+    @-webkit-keyframes "blink" {
+
+        from,
+        to {
+            opacity: 0
+        }
+
+        50% {
+            opacity: 1
+        }
+    }
+
+    @-ms-keyframes "blink" {
+
+        from,
+        to {
+            opacity: 0
+        }
+
+        50% {
+            opacity: 1
+        }
+    }
+
+    @-o-keyframes "blink" {
+
+        from,
+        to {
+            opacity: 0
+        }
+
+        50% {
+            opacity: 1
+        }
+    }
+</style>
 <div class="row mt-2">
     <div class="row" style="position: absolute;
     right: 0%;
@@ -11,93 +88,110 @@
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
             <svg height="50" width="50" class="blinking">
-                <circle id="status-light" cx="10" cy="10" r="10" fill="red" />
+                <circle id="status-light" cx="10" cy="10" r="10" fill="green"></circle>
                 Sorry, your browser does not support inline SVG.
             </svg>
         </div>
     </div>
-    <div class="row" id="all-gauges" style="padding-left: 60px;">
-        <div class="col-md-3 col-lg-3 text-center">
-            <div class="row">
-                <div id="GaugeChart1" class="epoch gauge-medium gauge-dial"></div>
-            </div>
-            <div class="row pr-2 gauge-text">
-                Total Load (%-age)
-            </div>
+    <div class="row">
+        <div class="col-md-3 col-lg-3">
+            <div id="loadGauge1"></div>
         </div>
-        <div class="col-md-3 col-lg-3 text-center">
-            <div class="row">
-                <div id="GaugeChart2" class="epoch gauge-medium gauge-dial"></div>
-            </div>
-            <div class="row pr-2 gauge-text">
-                Total Load (Watts)
-            </div>
+        <div class="col-md-3 col-lg-3">
+            <div id="loadGauge2"></div>
         </div>
-        <div class="col-md-3 col-lg-3 text-center">
-            <div class="row">
-                <div id="GaugeChart3" class="epoch gauge-medium gauge-dial"></div>
-            </div>
-            <div class="row pr-2 gauge-text">
-                Inverter Temprature (Celsius)
-            </div>
+        <div class="col-md-3 col-lg-3">
+            <div id="voltGauge" style="margin-left: 50px;"></div>
         </div>
-        <div class="col-md-3 col-lg-3 text-center">
-            <div class="row">
-                <div id="GaugeChart4" class="epoch gauge-medium gauge-dial"></div>
-            </div>
-            <div class="row pr-2 gauge-text">
-                Grid Voltage (Volts)
-            </div>
+        <div class="col-md-3 col-lg-3">
+            <div id="tempChart"></div>
         </div>
     </div>
-
-    <div id="lineChart" class="epoch" style="height: 200px; position: relative; margin-top: 6%;"
-        data-epoch-container-id="epoch-container-9"></div>
+    <div class="row">
+        <div id="line-container"></div>
+    </div>
 </div>
 <script src="/public/js/socket.io.js"></script>
+<script src="/public/highcharts/highcharts.js"></script>
+<script src="/public/highcharts/highcharts-more.js"></script>
+<script src="/public/highcharts/modules/solid-gauge.js"></script>
+<script src="/public/js/scripts.js"></script>
 <script>
-    $gauge1 = $("#GaugeChart1").epoch({
-        type: 'time.gauge',
-        domain: [0, 100],
-        value: 0,
-        format: function (v) {
-            return Math.round(v) + " %"
+    Highcharts.setOptions({
+        time: {
+            timezoneOffset: -5 * 60
         }
     });
-    $gauge2 = $("#GaugeChart2").epoch({
-        type: 'time.gauge',
-        domain: [0, 1500],
-        value: 0,
-        format: function (v) {
-            return Math.round(v) + " W"
-        }
-    });
-    $gauge3 = $("#GaugeChart3").epoch({
-        type: 'time.gauge',
-        domain: [0, 100],
-        value: 0,
-        format: function (v) {
-            return Math.round(v) + " C"
-        }
-    });
-    $gauge4 = $("#GaugeChart4").epoch({
-        type: 'time.gauge',
-        domain: [100, 280],
-        value: 100,
-        format: function (v) {
-            return (v).toFixed(2) + " V"
-        }
-    });
-    var leftRange = [0, 5000];
-    var rightRange = [0, 100];
-    $lineChart = $('#lineChart').epoch({
-        type: 'time.line',
-        range: {
-            left: leftRange,
-            right: rightRange
+    var loadGaugesChart1 = Highcharts.chart('loadGauge1', Highcharts.merge(loadGaugesOptions, {
+        yAxis: {
+            min: 0,
+            max: 100
         },
-        axes: ['left', 'bottom', 'right']
-    });
+
+        credits: {
+            enabled: false
+        },
+
+        series: [{
+            data: [0],
+            dataLabels: {
+                format: '<div style="text-align:center">' +
+                    '<span style="font-size:25px">{y}</span><br/>' +
+                    '<span style="font-size:12px;opacity:0.4">Load in %-age</span>' +
+                    '</div>'
+            },
+            tooltip: {
+                valueSuffix: ' %'
+            }
+        }]
+
+    }));
+    var loadGaugesChart2 = Highcharts.chart('loadGauge2', Highcharts.merge(loadGaugesOptions, {
+        yAxis: {
+            min: 0,
+            max: 5000
+        },
+        credits: {
+            enabled: false
+        },
+        series: [{
+            data: [0],
+            dataLabels: {
+                format: '<div style="text-align:center">' +
+                    '<span style="font-size:25px">{y}</span><br/>' +
+                    '<span style="font-size:12px;opacity:0.4">' +
+                    'Load in Watts' +
+                    '</span>' +
+                    '</div>'
+            },
+            tooltip: {
+                valueSuffix: ' Watts'
+            }
+        }]
+
+    }));
+    var lineChart = Highcharts.chart('line-container', Highcharts.merge(lineChartOpts, {}));
+    var voltGauge = Highcharts.chart('voltGauge', Highcharts.merge(voltGaugeOpts,{}));
+    var tempChart = Highcharts.chart('tempChart', Highcharts.merge(tempGaugeOptions, {
+        yAxis: {
+            min: 0,
+            max: 150
+        },
+        credits: {
+            enabled: false
+        },
+        series: [{
+            name: 'inTemp',
+            data: [0],
+            dataLabels: {
+                format: '<div style="position:absolute;text-align:center;top:-20px;left: -40px;"><span style="font-size:25px;color:' +
+                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) ||
+                        'black') + '">{y} &deg;C</span><br/>' +
+                    '<span style="font-size:12px;color:black">Inverter Temprature</span></div>'
+            }
+        }]
+    }));
+    window.charttick = 0
 
     function connect() {
         const socket = io.connect('{{wsurl}}');
@@ -105,51 +199,25 @@
             $('#status-light').attr('fill', 'green');
             socket.send("Client connected");
         });
+
+        /**
+        * see file socket_out_format.txt in root for column order 
+        */
         socket.on('data', (data) => {
             var data = JSON.parse(data);
-            $gauge1.push(parseInt(data[6]))
-            $gauge2.push(parseInt(data[5]));
-            $gauge3.push(parseInt(data[11]));
-            $gauge4.push(parseFloat(data[0]));
-            data[21] = Math.round(data[21] / 1000);
-            var lineData = [{
-                label: 'Active Output Power',
-                values: [{
-                    time: data[21],
-                    y: parseInt(data[5])
-                }],
-                range: leftRange
-            }, {
-                label: 'Grid Voltage',
-                values: [{
-                    time: data[21],
-                    y: parseInt(data[0])
-                }],
-                range: leftRange
-            }, {
-                label: 'Battery Voltage',
-                values: [{
-                    time: data[21],
-                    y: parseInt(data[8])
-                }],
-                range: rightRange
-            }, {
-                label: 'Load',
-                values: [{
-                    time: data[21],
-                    y: parseInt(data[6])
-                }],
-                range: leftRange
-            }, {
-                label: 'Inverter Temprature',
-                values: [{
-                    time: data[21],
-                    y: parseInt(data[11])
-                }],
-                range: leftRange
-            }];
-            console.log(lineData);
-            $lineChart.push(lineData);
+            lineChart.series[0].addPoint([data[21], parseInt(data[5])], false, (window.charttick > 40 || window.charttick == 1));
+            lineChart.series[1].addPoint([data[21], parseInt(data[6])], false, (window.charttick > 40 || window.charttick == 1));
+            lineChart.series[2].addPoint([data[21], parseInt(data[0])], false, (window.charttick > 40 || window.charttick == 1));
+            lineChart.series[3].addPoint([data[21], parseInt(data[8])], false, (window.charttick > 40 || window.charttick == 1));
+            lineChart.series[4].addPoint([data[21], parseInt(data[11])], false, (window.charttick > 40 || window.charttick == 1));
+            lineChart.redraw();
+            if (window.charttick <= 40) {
+                window.charttick++;
+            }
+            tempChart.series[0].points[0].update(parseInt(data[11]));
+            voltGauge.series[0].points[0].update(parseInt(data[0]));
+            loadGaugesChart1.series[0].points[0].update(parseInt(data[6]));
+            loadGaugesChart2.series[0].points[0].update(parseInt(data[5]));
         });
         socket.on('disconnect', () => {
             setTimeout(function () {
