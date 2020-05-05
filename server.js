@@ -421,7 +421,7 @@ function processLogs(files) {
             let data = line.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
             let date = new Date(data.splice(0, 2)).getTime();
             data.push(date);
-            wStream.write(JSON.stringify(data) + "\r\n");
+            wStream.write(JSON.stringify(data) + config.EOL);
             lineCount++;
         });
         lineReader.on('close', () => {
@@ -447,7 +447,7 @@ function logsToCSV(file, callback) {
             timeStyle: 'short'
         }).replace(/\,/g, '');
         data.push(date);
-        wStream.write(data.join(',') + "\r\n");
+        wStream.write(data.join(',') + config.EOL);
     });
     lineReader.on('close', () => {
         fs.unlink(file, () => {});
