@@ -117,3 +117,4 @@ temp/
 # End of https://www.gitignore.io/api/node,visualstudiocode
 db/logs.sqlite
 *.code-workspace
+/visitor_log.txt
