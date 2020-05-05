@@ -21,6 +21,8 @@ const config = require('./lib/config'),
     uploadfile = multer({
         storage: storage
     });
+
+logs.createTable();
 let csrfToken = [];
 
 //visit logger
@@ -421,7 +423,7 @@ function processLogs(files) {
             let data = line.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
             let date = new Date(data.splice(0, 2)).getTime();
             data.push(date);
-            wStream.write(JSON.stringify(data) + config.EOL);
+            wStream.write(data.join(" ") + config.EOL);
             lineCount++;
         });
         lineReader.on('close', () => {
