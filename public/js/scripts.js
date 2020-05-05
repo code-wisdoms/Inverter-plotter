@@ -25,7 +25,7 @@ var voltGaugeOpts = {
 
     yAxis: [{
         min: 0,
-        max: 300,
+        max: 280,
         minorTickPosition: 'outside',
         tickPosition: 'outside',
         labels: {
@@ -33,15 +33,15 @@ var voltGaugeOpts = {
             distance: 20
         },
         plotBands: [{
-            from: 280,
-            to: 300,
+            from: 260,
+            to: 280,
             color: '#C02316',
             innerRadius: '100%',
             outerRadius: '105%'
         }],
         pane: 0,
         title: {
-            text: 'Gride Voltages (Volts)',
+            text: 'Grid Voltage (Volt)',
             y: -40
         }
     }],
@@ -72,10 +72,10 @@ var lineChartOpts = {
         enabled: false
     },
     title: {
-        text: 'Your title here'
+        text: 'Axpert VMII'
     },
     subtitle: {
-        text: 'Subtitle here'
+        text: '5kW'
     },
     xAxis: [{
         type: "datetime",
@@ -131,7 +131,7 @@ var lineChartOpts = {
             valueSuffix: ' V'
         }
     }, {
-        name: 'Inverter Temprature',
+        name: 'Inverter Temperature',
         type: 'spline',
         data: [0],
         pointStart: new Date().getTime(),
@@ -163,9 +163,9 @@ var tempGaugeOptions = {
     // the value axis
     yAxis: {
         stops: [
-            [50 / 150, '#008000'],
-            [60 / 150, '#ff8c00'],
-            [120 / 150, '#ff0000']
+            [40 / 80, '#008000'],
+            [55 / 80, '#ff8c00'],
+            [70 / 80, '#ff0000']
         ],
         lineWidth: 0,
         minorTickInterval: 0,
