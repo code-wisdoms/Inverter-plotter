@@ -118,3 +118,4 @@ temp/
 db/logs.sqlite
 *.code-workspace
 /visitor_log.txt
+db/SQLiteStudio/InstallationLog.txt

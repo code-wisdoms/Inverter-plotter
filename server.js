@@ -88,10 +88,17 @@ app.use(function (req, res, next) {
             }
         });
     }
-    let d = new Date();
-    req.todaysDate = d.toISOString().split('T')[0];
-    d.setDate(d.getDate() - 7);
-    req.prevWeek = d.toISOString().split('T')[0];
+    let newDate = new Date();
+    let year = newDate.getFullYear();
+    let month = (newDate.getMonth() < 9) ? "0" + (newDate.getMonth() + 1) : (newDate.getMonth() + 1);
+    let day = (newDate.getDate() <= 9) ? "0" + newDate.getDate() : newDate.getDate();
+    req.todaysDate = `${year}-${month}-${day}`;
+
+    newDate.setDate(newDate.getDate() - 7);
+    year = newDate.getFullYear();
+    month = (newDate.getMonth() < 9) ? "0" + (newDate.getMonth() + 1) : (newDate.getMonth() + 1);
+    day = (newDate.getDate() <= 9) ? "0" + newDate.getDate() : newDate.getDate();
+    req.prevWeek = `${year}-${month}-${day}`;
 
     next();
 });
@@ -140,41 +147,63 @@ app.get('/table', (req, res) => {
     res.render('table');
 });
 app.post('/table', (req, res) => {
-    let recordsTotal = 0;
-    logs.select("SELECT COUNT(*) as count {t}", (err, row) => {
-        recordsTotal = row[0].count;
-    });
-    logs.select(`SELECT * {t}
-                ORDER BY ${req.body.columns[req.body.order[0].column].data} ${req.body.order[0].dir}
-                LIMIT ${req.body.length} OFFSET ${req.body.start}`, function (err, row) {
-        if (!err) {
-            let data = [];
-            row.forEach(item => {
-                let dt = {};
-                req.body.columns.forEach((col) => {
-                    if (col['data'] == 'dated') {
-                        item[col['data']] = new Date(item[col['data']]).toLocaleString('en-gb', {
-                            'dateStyle': 'short',
-                            'timeStyle': 'short'
-                        });
-                    }
-                    dt[col['data']] = item[col['data']];
-                });
-                data.push(dt);
-            });
-            res.json({
-                "draw": req.body.draw,
-                "recordsFiltered": recordsTotal,
-                "recordsTotal": recordsTotal,
-                "data": data
-            });
-        } else {
-            res.json({
-                status: 'error',
-                message: err
-            });
+    if (!req.body) {
+        res.sendStatus(404).end();
+    } else {
+        let recordsTotal = 0;
+        let sqlQ = {};
+
+        if (!req.body.length) {
+            req.body.length = 10;
         }
-    });
+        if (req.body.length < 0 || req.body.length > 100) {
+            req.body.length = 10;
+        }
+        if (!req.body.order || !req.body.columns) {
+            sqlQ.orderBy = 'dated';
+            sqlQ.dir = 'DESC';
+        } else {
+            sqlQ.orderBy = req.body.columns[req.body.order[0].column].data;
+            sqlQ.dir = req.body.order[0].dir;
+        }
+        if (!req.body.start) {
+            req.body.start = 0;
+        }
+        logs.select("SELECT COUNT(*) as count {t}", (err, row) => {
+            recordsTotal = row[0].count;
+        });
+        logs.select(`SELECT * {t}
+                ORDER BY ${sqlQ.orderBy} ${sqlQ.dir}
+                LIMIT ${req.body.length} OFFSET ${req.body.start}`, function (err, row) {
+            if (!err) {
+                let data = [];
+                row.forEach(item => {
+                    let dt = {};
+                    req.body.columns.forEach((col) => {
+                        if (col['data'] == 'dated') {
+                            item[col['data']] = new Date(item[col['data']]).toLocaleString('en-gb', {
+                                'dateStyle': 'short',
+                                'timeStyle': 'short'
+                            });
+                        }
+                        dt[col['data']] = item[col['data']];
+                    });
+                    data.push(dt);
+                });
+                res.json({
+                    "draw": req.body.draw,
+                    "recordsFiltered": recordsTotal,
+                    "recordsTotal": recordsTotal,
+                    "data": data
+                });
+            } else {
+                res.json({
+                    status: 'error',
+                    message: err
+                });
+            }
+        });
+    }
 });
 app.all('/upload', (req, res) => {
     if (req.body && req.body.password && req.body.password == config.password) {
@@ -226,6 +255,12 @@ app.post('/chart/bar', (req, res) => {
     });
     where = where.replace(/\,$/g, '');
     where += " FROM logs";
+    if (!req.body.fromdate) {
+        req.body.fromdate = req.todaysDate;
+    }
+    if (!req.body.todate) {
+        req.body.todate = req.todaysDate;
+    }
     if (req.body.fromdate && req.body.todate) {
         let date = req.body.todate.split('-');
         date[2] = parseInt(date[2]) + 1;
@@ -260,6 +295,12 @@ app.post('/chart/candle', (req, res) => {
                 MAX(${req.body.col}) AS max
                 FROM logs`;
 
+    if (!req.body.fromdate) {
+        req.body.fromdate = req.todaysDate;
+    }
+    if (!req.body.todate) {
+        req.body.todate = req.todaysDate;
+    }
     if (req.body.fromdate && req.body.todate) {
         let date = req.body.todate.split('-');
         date[2] = parseInt(date[2]) + 1;
@@ -291,22 +332,36 @@ app.post('/chart/ann', (req, res) => {
     let where = "";
     if (req.body.num) {
         intervalNum = parseInt(req.body.num);
-        if (req.body.type && ['d', 'h', 'm', 's'].includes(req.body.type)) {
-            switch (req.body.type) {
-                case 'd':
-                    intervalNum *= 8.64e+7;
-                    break;
-                case 'h':
-                    intervalNum *= 3.6e+6;
-                    break;
-                case 'm':
+        switch (req.body.type) {
+            case 'd':
+                intervalNum *= 8.64e+7;
+                break;
+            case 'm':
+                if (req.body.fromdate == req.todaysDate) {
                     intervalNum *= 60000;
-                    break;
-                case 's':
+                } else {
+                    intervalNum *= 3.6e+6; // hour
+                }
+                break;
+            case 's':
+                if (req.body.fromdate == req.todaysDate) {
                     intervalNum *= 1000;
-                    break;
+                } else {
+                    intervalNum *= 3.6e+6; // hour
+                }
+                break;
+            case 'h':
+            default: {
+                intervalNum *= 3.6e+6;
+                break;
             }
         }
+    }
+    if (!req.body.fromdate) {
+        req.body.fromdate = req.todaysDate;
+    }
+    if (!req.body.todate) {
+        req.body.todate = req.todaysDate;
     }
     if (req.body.fromdate && req.body.todate) {
         let date = req.body.todate.split('-');
