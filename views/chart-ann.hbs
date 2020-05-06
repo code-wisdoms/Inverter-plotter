@@ -18,14 +18,12 @@
     <span id="skip_form">
         <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
             <label for="inputcolname" class="col-sm-2 control-label">Interval:</label>
-            <div class="col-sm-4">
-                <input type="number" name="num" id="input_skip" class="form-control data-field" min="1" value="1"
-                    max="">
-            </div>
-            <div class="col-sm-6">
+            <div class="col-sm-10">
                 <select class="form-control data-field" name="type" id="sel_skip">
+                    <option value="y">Years</option>
+                    <option value="mm">Months</option>
                     <option value="d">Days</option>
-                    <option value="h" selected="selected">Hour</option>
+                    <option value="h" selected="selected">Hours</option>
                     <option value="m">Minutes</option>
                     <option value="s">Seconds</option>
                 </select>
@@ -91,6 +89,8 @@
                     data.addColumn('number', item.replace(/\_/g, ' '));
                 });
                 data.addRows(res.map((item) => {
+                    item = Object.values(item);
+                    item.pop();
                     item[0] = new Date(item[0]);
                     return item;
                 }));

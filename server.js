@@ -245,7 +245,7 @@ app.get('/chart/:name', (req, res) => {
     res.render(`chart-${req.params.name}`, obj);
 });
 app.post('/chart/bar', (req, res) => {
-    let where = `SELECT strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded, dated,`;
+    let where = `SELECT strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch', 'localtime') AS dateAdded, dated,`;
     req.body.cols.forEach((col, i) => {
         if (req.body.type == "AVG" && ['output_apparent_power', 'output_active_power'].includes(req.body.cols[i])) {
             where += ` (round(${req.body.type}(${col}))*24)/1000 as col${i+1},`;
@@ -290,7 +290,7 @@ app.post('/chart/bar', (req, res) => {
 });
 app.post('/chart/candle', (req, res) => {
     let where = `SELECT
-                strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch') AS dateAdded,
+                strftime('%d-%m-%Y', dated / 1000.0, 'unixepoch', 'localtime') AS dateAdded,
                 MIN(${req.body.col}) AS min,
                 MAX(${req.body.col}) AS max
                 FROM logs`;
@@ -328,33 +328,35 @@ app.post('/chart/candle', (req, res) => {
     });
 });
 app.post('/chart/ann', (req, res) => {
-    let intervalNum = 0;
     let where = "";
-    if (req.body.num) {
-        intervalNum = parseInt(req.body.num);
-        switch (req.body.type) {
-            case 'd':
-                intervalNum *= 8.64e+7;
-                break;
-            case 'm':
-                if (req.body.fromdate == req.todaysDate) {
-                    intervalNum *= 60000;
-                } else {
-                    intervalNum *= 3.6e+6; // hour
-                }
-                break;
-            case 's':
-                if (req.body.fromdate == req.todaysDate) {
-                    intervalNum *= 1000;
-                } else {
-                    intervalNum *= 3.6e+6; // hour
-                }
-                break;
-            case 'h':
-            default: {
-                intervalNum *= 3.6e+6;
-                break;
+    let timeFrmtStr = "";
+    switch (req.body.type) {
+        case "s": {
+            if (req.body.todate == req.body.fromdate) {
+                timeFrmtStr = "%S";
             }
+        }
+        case "m": {
+            if (req.body.todate == req.body.fromdate) {
+                timeFrmtStr = "%M" + timeFrmtStr;
+            }
+        }
+        case "h": {
+            timeFrmtStr = "%H" + timeFrmtStr;
+        }
+        case "d": {
+            timeFrmtStr = "%d" + timeFrmtStr;
+        }
+        case "mm": {
+            timeFrmtStr = "%m" + timeFrmtStr;
+        }
+        case "y": {
+            timeFrmtStr = "%Y" + timeFrmtStr;
+            break;
+        }
+        default: {
+            timeFrmtStr = "%Y%m%d%";
+            break;
         }
     }
     if (!req.body.fromdate) {
@@ -381,50 +383,21 @@ app.post('/chart/ann', (req, res) => {
     let totalCols = 0;
     req.body.cols.forEach((item, ix) => {
         totalCols++;
-        cols += ` ${item} as col${ix+1},`;
+        if (req.body.type == 'd' && ['output_apparent_power', 'output_active_power'].includes(req.body.cols[ix])) {
+            cols += ` (AVG(${item})*24)/1000 as col${ix+1},`;
+        } else {
+            cols += ` AVG(${item}) as col${ix+1},`;
+        }
     });
 
-    logs.select(`SELECT dated,${cols.replace(/\,$/g,'')} {t}${where}`, function (err, row) {
+    logs.select(`SELECT dated,
+    ${cols} strftime('${timeFrmtStr}',
+    datetime(dated / 1000, 'unixepoch', 'localtime')) as date2
+    {t} ${where}
+    GROUP BY strftime('${timeFrmtStr}', datetime(dated / 1000, 'unixepoch', 'localtime'))
+    ORDER BY dated DESC;`, function (err, row) {
         if (!err) {
-            let data = [],
-                dated = 0,
-                avgData = {},
-                count = 0;
-
-            row.forEach(item => {
-                if (item.dated > dated) {
-                    dated = parseInt(item.dated) + intervalNum;
-                    for (let index = 1; index <= totalCols; index++) {
-                        if (!avgData['col' + index]) {
-                            avgData['col' + index] = 0;
-                        }
-                        avgData['col' + index] += parseInt(item['col' + index]);
-                    }
-                    count++;
-
-                    for (let index = 1; index <= totalCols; index++) {
-                        item['col' + index] = avgData['col' + index] / count;
-                        if (
-                            req.body.type == 'd' && ['output_apparent_power', 'output_active_power'].includes(req.body.cols[index - 1])) {
-                            item['col' + index] = (item['col' + index] * 24) / 1000;
-                        }
-                    }
-
-                    data.push(Object.values(item));
-                    avgData = [];
-                    count = 0;
-                } else {
-                    for (let index = 1; index <= totalCols; index++) {
-                        if (!avgData['col' + index]) {
-                            avgData['col' + index] = 0;
-                        }
-                        avgData['col' + index] += parseInt(item['col' + index]);
-                    }
-                    count++;
-                };
-
-            });
-            res.json(data);
+            res.json(row);
         } else {
             res.json({
                 status: 'error',
