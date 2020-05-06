@@ -117,6 +117,7 @@
 <script src="/public/highcharts/modules/solid-gauge.js"></script>
 <script src="/public/js/scripts.js"></script>
 <script>
+    var lineTickLimit = {{tickLimit}};
     Highcharts.setOptions({
         time: {
             timezoneOffset: -5 * 60
@@ -205,13 +206,13 @@
         */
         socket.on('data', (data) => {
             var data = JSON.parse(data);
-            lineChart.series[0].addPoint([data[21], parseInt(data[5])], false, (window.charttick > 40 || window.charttick == 1));
-            lineChart.series[1].addPoint([data[21], parseInt(data[6])], false, (window.charttick > 40 || window.charttick == 1));
-            lineChart.series[2].addPoint([data[21], parseFloat(data[0])], false, (window.charttick > 40 || window.charttick == 1));
-            lineChart.series[3].addPoint([data[21], parseFloat(data[8])], false, (window.charttick > 40 || window.charttick == 1));
-            lineChart.series[4].addPoint([data[21], parseInt(data[11])], false, (window.charttick > 40 || window.charttick == 1));
+            lineChart.series[0].addPoint([data[21], parseInt(data[5])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+            lineChart.series[1].addPoint([data[21], parseInt(data[6])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+            lineChart.series[2].addPoint([data[21], parseFloat(data[0])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+            lineChart.series[3].addPoint([data[21], parseFloat(data[8])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+            lineChart.series[4].addPoint([data[21], parseInt(data[11])], false, (window.charttick > lineTickLimit || window.charttick == 1));
             lineChart.redraw();
-            if (window.charttick <= 40) {
+            if (window.charttick <= lineTickLimit) {
                 window.charttick++;
             }
             tempChart.series[0].points[0].update(parseInt(data[11]));

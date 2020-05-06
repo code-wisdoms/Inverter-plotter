@@ -104,7 +104,8 @@ app.use(function (req, res, next) {
 });
 app.get('/', (req, res) => {
     res.render('live', {
-        wsurl: `ws://${config.domain}:${config.port}`
+        wsurl: `ws://${config.domain}:${config.port}`,
+        tickLimit: config.lineGraphTickLimit
     })
 });
 app.get('/public/:subdir/:file', function (request, response) {
