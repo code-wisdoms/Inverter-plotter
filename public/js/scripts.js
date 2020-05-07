@@ -1,7 +1,7 @@
 var voltGaugeOpts = {
     chart: {
         type: 'gauge',
-        height: 200
+        height: 170
     },
     title: null,
     pane: [{
