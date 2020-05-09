@@ -412,7 +412,15 @@ app.get('/stats', (req, res) => {
 });
 app.post("/inboundlogs", (req, res) => {
     if (req.body.secret === process.env.secret) {
-        if (req.body.ping) {
+        if (req.body.ping && req.body.getLast) {
+            logs.select('SELECT dated {t} ORDER BY dated DESC LIMIT 1;', function (err, row) {
+                res.json({
+                    pong: "true",
+                    lastRow: JSON.stringify(row)
+                }).end();
+            });
+            return;
+        } else if (req.body.ping) {
             res.json({
                 pong: "true"
             }).end();
@@ -420,14 +428,28 @@ app.post("/inboundlogs", (req, res) => {
         }
         if (req.body.row) {
             req.body.row = JSON.parse(req.body.row);
-            let data = req.body.row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
-            let date = new Date(data.splice(0, 2)).getTime();
-            data.push(date);
-            logs.insertSingle(data);
-            ws_broadcast(JSON.stringify(data));
-            res.json({
-                success: true
-            });
+            if (Array.isArray(req.body.row)) {
+                let rowArr = [];
+                req.body.row.forEach(row => {
+                    let data = row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
+                    let date = new Date(data.splice(0, 2)).getTime();
+                    data.push(date);
+                    rowArr.push(data);
+                });
+                logs.insertSingle(rowArr);
+                ws_broadcast(JSON.stringify(rowArr[rowArr.length - 1]));
+            } else {
+                let data = req.body.row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
+                let date = new Date(data.splice(0, 2)).getTime();
+                data.push(date);
+                logs.insertSingle(data);
+                ws_broadcast(JSON.stringify(data));
+            }
+            setTimeout(() => {
+                res.json({
+                    success: true
+                });
+            }, 1000);
             return;
         }
     }

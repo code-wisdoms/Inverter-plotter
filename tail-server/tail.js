@@ -9,12 +9,19 @@ let listener = {
     port: process.env.listener.split(':')[1]
 }
 let tailMain = null,
-    logRows = [];
+    is_sending = false,
+    logRows = [],
+    lastTimestamp = 0;
 
 request.sendToListener({
-    ping: true
+    ping: true,
+    getLast: true
 }, function (res, err, body) {
     if (!err && body && body.pong) {
+        body.lastRow = JSON.parse(body.lastRow);
+        if (Array.isArray(body.lastRow) && body.lastRow.length) {
+            lastTimestamp = body.lastRow[0].dated;
+        }
         start();
     } else {
         console.log("Couldn't reach listener server. Make sure you have set correct hostname to main server and a matching secret on both servers in .env file.");
@@ -50,9 +57,11 @@ function sendRow(row) {
     request.sendToListener({
         row: JSON.stringify(row)
     }, function (res, err, body) {
-        if (!err && body.success) {
+        if (!err && body && body.success) {
             if (logRows.length > 0) {
-                sendRow(logRows.pop());
+                sendRow(logRows.splice(0, logRows.length > 500 ? 500 : logRows.length));
+            } else {
+                is_sending = false;
             }
         } else {
             console.log(`Error reaching listener server at ${listener.host}:${listener.port}. retrying in 3 seconds!`);
@@ -74,8 +83,14 @@ function startTail(path) {
 
     tail.on("line", function (row) {
         if (row && row.length > 0) {
-            logRows.push(row);
-            sendRow(logRows.pop());
+            let time = new Date(row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ').splice(0, 2)).getTime();
+            if (time > lastTimestamp) {
+                logRows.push(row);
+                if (!is_sending && (new Date().getTime() - time < 10000)) {
+                    is_sending = true;
+                    sendRow(logRows.splice(0, logRows.length > 500 ? 500 : logRows.length));
+                }
+            }
         }
     });
 
