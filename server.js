@@ -436,7 +436,7 @@ app.post("/inboundlogs", (req, res) => {
                     data.push(date);
                     rowArr.push(data);
                 });
-                logs.insertSingle(rowArr);
+                logs.insertSingle(rowArr, true);
                 ws_broadcast(JSON.stringify(rowArr[rowArr.length - 1]));
             } else {
                 let data = req.body.row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
