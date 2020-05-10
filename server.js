@@ -428,28 +428,28 @@ app.post("/inboundlogs", (req, res) => {
         }
         if (req.body.row) {
             req.body.row = JSON.parse(req.body.row);
-            if (Array.isArray(req.body.row)) {
-                let rowArr = [];
-                req.body.row.forEach(row => {
+            if (req.body.row.length) {
+                let rowArr = req.body.row.map(row => {
                     let data = row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
                     let date = new Date(data.splice(0, 2)).getTime();
                     data.push(date);
-                    rowArr.push(data);
+                    return data;
                 });
-                logs.insertSingle(rowArr, true);
-                ws_broadcast(JSON.stringify(rowArr[rowArr.length - 1]));
+                if (rowArr.length == 1) {
+                    logs.insertSingle(rowArr[0]);
+                    ws_broadcast(JSON.stringify(rowArr[0]));
+                } else {
+                    logs.insertSingle(rowArr, true);
+                    ws_broadcast(JSON.stringify(rowArr[rowArr.length - 1]));
+                }
+                setTimeout(() => {
+                    res.json({
+                        success: true
+                    });
+                }, 1000);
             } else {
-                let data = req.body.row.replace(/[\(\)\[\]]+/g, ' ').trim().split(' ');
-                let date = new Date(data.splice(0, 2)).getTime();
-                data.push(date);
-                logs.insertSingle(data);
-                ws_broadcast(JSON.stringify(data));
+                console.log('Empty row recieved from tail');
             }
-            setTimeout(() => {
-                res.json({
-                    success: true
-                });
-            }, 1000);
             return;
         }
     }
