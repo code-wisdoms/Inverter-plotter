@@ -10,6 +10,7 @@ const config = require('./lib/config'),
     logs = require('./lib/logs'),
     fs = require('fs'),
     utils = require('./lib/utils'),
+    logger = require('./lib/logger'),
     storage = multer.diskStorage({
         destination: function (req, file, cb) {
             cb(null, "./temp");
@@ -25,11 +26,6 @@ const config = require('./lib/config'),
 logs.createTable();
 let csrfToken = [];
 
-//visit logger
-var logStream = fs.createWriteStream('visitor_log.txt', {
-    flags: 'a'
-});
-
 let app = express();
 const server = require('http').Server(app);
 
@@ -40,11 +36,11 @@ const io = require('socket.io')(server);
 io.on('connection', (socket) => {
     utils.get_ip_details(socket.handshake.address, function (data) {
         if (data) {
-            logStream.write(`[${new Date().toLocaleString()}]: ${socket.handshake.address} - Socket - ${data}\t\n`);
+            logger.log(`${socket.handshake.address} - Socket - ${data}`);
         }
     });
     socket.on('message', function (data) {
-        logStream.write(`[${new Date().toLocaleString()}]:[Socket][MESSAGE] - ${data}\t\n`);
+        logger.log(`[Socket][MESSAGE] - ${data}`);
     });
 });
 
@@ -77,14 +73,14 @@ app.use(function (req, res, next) {
         req.userId = list[list.length - 1].replace(/\.+/g, '');
         utils.get_ip_details(list[list.length - 1], function (data) {
             if (data) {
-                logStream.write(`[${new Date().toLocaleString()}]: ${list[list.length - 1]} - HTTP - ${data}\t\n`);
+                logger.log(` ${list[list.length - 1]} - HTTP - ${data}`);
             }
         });
     } else {
         req.userId = req.connection.remoteAddress.replace(/\.+/g, '');
         utils.get_ip_details(req.connection.remoteAddress, function (data) {
             if (data) {
-                logStream.write(`[${new Date().toLocaleString()}]: ${req.connection.remoteAddress} - HTTP - ${data}\t\n`);
+                logger.log(` ${req.connection.remoteAddress} - HTTP - ${data}`);
             }
         });
     }
@@ -184,7 +180,7 @@ app.post('/table', (req, res) => {
                         if (col['data'] == 'dated') {
                             item[col['data']] = new Date(item[col['data']]).toLocaleString('en-gb', {
                                 'dateStyle': 'short',
-                                'timeStyle': 'short'
+                                'timeStyle': 'medium'
                             });
                         }
                         dt[col['data']] = item[col['data']];
