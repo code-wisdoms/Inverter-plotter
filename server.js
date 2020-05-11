@@ -11,6 +11,7 @@ const config = require('./lib/config'),
     fs = require('fs'),
     utils = require('./lib/utils'),
     logger = require('./lib/logger'),
+    notifiers = require('./lib/notifier'),
     storage = multer.diskStorage({
         destination: function (req, file, cb) {
             cb(null, "./temp");
@@ -22,9 +23,18 @@ const config = require('./lib/config'),
     uploadfile = multer({
         storage: storage
     });
+let csrfToken = [],
+    flagsData = [];
 
-logs.createTable();
-let csrfToken = [];
+logs.createTable(() => {
+    logs.refreshFlags((err, rows) => {
+        err && console.log(err);
+
+        rows && rows.forEach(row => {
+            flagsData[row.name] = row;
+        });
+    });
+});
 
 let app = express();
 const server = require('http').Server(app);
@@ -432,8 +442,26 @@ app.post("/inboundlogs", (req, res) => {
                     return data;
                 });
                 if (rowArr.length == 1) {
-                    logs.insertSingle(rowArr[0]);
-                    ws_broadcast(JSON.stringify(rowArr[0]));
+                    rowArr = rowArr[0];
+                    logs.insertSingle(rowArr);
+                    ws_broadcast(JSON.stringify(rowArr));
+                    config.colNames.forEach((element, index) => {
+                        if (flagsData[element]) {
+                            if (Math.abs(flagsData[element].value - rowArr[index]) >= flagsData[element].variation) {
+                                let oldVal = flagsData[element].value;
+                                flagsData[element].value = rowArr[index];
+                                notifiers.send(
+                                    flagsData[element].name.replace(/\_/g, ' '),
+                                    Object.assign({
+                                        lastValue: oldVal,
+                                        time: utils.convertMS(new Date().getTime() - parseInt(flagsData[element].changed))
+                                    }, flagsData[element])
+                                );
+                                flagsData[element].changed = new Date().getTime();
+                                logs.updateFlag(flagsData[element].name, rowArr[index]);
+                            }
+                        }
+                    });
                 } else {
                     logs.insertSingle(rowArr, true);
                     ws_broadcast(JSON.stringify(rowArr[rowArr.length - 1]));
