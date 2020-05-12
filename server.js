@@ -146,6 +146,7 @@ adminArea.get('/', (req, res) => {
 adminArea.get('/notifications', (req, res) => {
     res.render('notifications-table', {
         colNames: config.colNames,
+        loggedIn: true
     });
 });
 adminArea.get('/notifications/delete/:name', (req, res) => {
@@ -234,7 +235,9 @@ adminArea.post('/getFlag', (req, res) => {
     });
 });
 adminArea.get('/csv', (req, res) => {
-    res.render('csv');
+    res.render('csv', {
+        loggedIn: true
+    });
 });
 adminArea.post('/csv', uploadfile.single('logfile'), (req, res) => {
     logsToCSV(req.file.path, (file) => {
@@ -245,7 +248,9 @@ adminArea.post('/csv', uploadfile.single('logfile'), (req, res) => {
     });
 });
 adminArea.get('/upload', (req, res) => {
-    res.render('upload');
+    res.render('upload', {
+        loggedIn: true
+    });
 });
 adminArea.post('/uploadfiles', uploadfile.array('logfile[]'), (req, res) => {
     processLogs(req.files);
