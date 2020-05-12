@@ -1,0 +1,159 @@
+<link rel="stylesheet" type="text/css" href="/public/css/datatables.min.css" />
+<script type="text/javascript" src="/public/js/datatables.min.js"></script>
+<div class="container">
+    <div class="row">
+        <a class="btn btn-primary" data-toggle="modal" href='#modal-addTrigger'>Add New Notification Trigger</a>
+    </div><br><br>
+    <div class="row">
+        <table class="table table-hover" id="mydatatable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Variation</th>
+                    <th>Last Changed</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="modal fade" id="modal-addTrigger">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">Add New Notification Trigger</h4>
+            </div>
+            <div class="modal-body">
+                <form method="POST" role="form">
+                    <div class="form-group">
+                        <label for="inputColumns" class="col-md-4 control-label">Select Column:</label>
+                        <div class="col-md-8">
+                            <select name="column" id="inputColumns" class="form-control" required="required">
+                                <option value=""></option>
+                                {{#each colNames}}
+                                <option value="{{this}}">
+                                    {{this}}
+                                </option>
+                                {{/each}}
+                            </select>
+                        </div>
+                    </div><br><br>
+                    <div class="form-group">
+                        <label for="inputvariation" class="col-sm-4 control-label" data-toggle="tooltip"
+                            title="How much value should change before it will send email.">Notify on variation:</label>
+                        <div class="col-md-8">
+                            <input type="number" name="variation" id="inputvariation" class="form-control" value=""
+                                min="1" required="required">
+                        </div>
+                    </div><br>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modal-edit">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">Edit Notification Trigger</h4>
+            </div>
+            <div class="modal-body">
+                <form method="POST" role="form">
+                    <div class="form-group">
+                        <label for="inputColumns" class="col-md-4 control-label">Select Column:</label>
+                        <div class="col-md-8">
+                            <input type="hidden" name="edit" class="form-control" value="true">
+                            <input type="hidden" name="column" class="form-control" value="">
+                            <input type="text" id="inputColname" class="form-control" value="" disabled>
+                        </div>
+                    </div><br><br>
+                    <div class="form-group">
+                        <label for="inputvariation" class="col-sm-4 control-label">Notify on variation:</label>
+                        <div class="col-md-8">
+                            <input type="number" name="variation" id="inputvariation" class="form-control" value=""
+                                min="1" required="required">
+                        </div>
+                    </div><br>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('#mydatatable').DataTable({
+        "order": [
+            [0, "desc"]
+        ],
+        "serverSide": true,
+        "searching": false,
+        'ajax': {
+            "type": "POST",
+            "url": '/admin/notif_table',
+            "beforeSend": function () {
+                $('.loader').show();
+            },
+            "error": function (jqxhr, txStatus, errThrown) {
+                alert(txStatus + errThrown);
+            },
+            "complete": function () {
+                $('.loader').hide();
+            },
+        },
+        "columns": [{
+            "title": "Name",
+            "data": "name"
+        }, {
+            "title": "Variation",
+            "data": "variation"
+        }, {
+            "title": "Last Changed",
+            "data": "changed"
+        }, {
+            "title": "Actions",
+            "data": "actions"
+        }]
+    });
+    $('#mydatatable').on('click', '.btnEdit', function () {
+        $.ajax({
+            type: "POST",
+            url: "/admin/getFlag",
+            data: {
+                name: $(this).data('name')
+            },
+            xhrFields: {
+                withCredentials: true
+            },
+            beforeSend: function () {
+                $('.loader').show();
+            },
+            error: function (jqxhr, txStatus, errThrown) {
+                alert("Error reaching server "  + errThrown);
+            },
+            complete: function () {
+                $('.loader').hide();
+            },
+            success: function (res) {
+                $('#modal-edit input[name="column"]').val(res.name);
+                $('#modal-edit #inputColname').val(res.name);
+                $('#modal-edit #inputvariation').val(res.variation);
+            }
+        });
+    });
+</script>

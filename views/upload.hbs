@@ -35,7 +35,7 @@
     $(document).ready(function () {
         $.ajax({
             type: "GET",
-            url: "/stats",
+            url: "/admin/stats",
             success: function (res) {
                 if (res && !res.complete) {
                     runProgress($('form'));
@@ -48,7 +48,7 @@
         e.stopPropagation();
         $.ajax({
             type: 'POST',
-            url: "/uploadfiles",
+            url: "/admin/uploadfiles",
             beforeSend: function () {
                 $('.loader').show();
             },
@@ -58,7 +58,7 @@
             contentType: false,
             cache: false,
             error: function (jqxhr, txStatus, errThrown) {
-                alert(txStatus + errThrown);
+                alert(txStatus + ' ' + errThrown);
             },
             success: function (res) {
                 if (res.status == 'success') {
@@ -84,7 +84,7 @@
         setTimeout(() => {
             $.ajax({
                 type: "GET",
-                url: "/stats",
+                url: "/admin/stats",
                 success: function (res) {
                     if (res) {
                         $prog.find('.progress-bar').css('width', res.percentage + '%');

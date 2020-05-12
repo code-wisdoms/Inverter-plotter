@@ -1,17 +1,14 @@
-const request = require('../request'),
-    config = require('../config');
+const request = require('../request');
 
 module.exports.send = function (type, message) {
     if (typeof message === 'string') {
         sendEmail(type, message);
     }
     if (typeof message === 'object') {
-        message.value = parseInt(message.value);
-        message.lastValue = parseInt(message.lastValue);        
         sendEmail(
-            `${(message.value > message.lastValue) ? "UP" : "DOWN"} ${type}`,
-            `${type} just went ${(message.value > message.lastValue) ? "up" : "down"}.
-            It has been ${(message.value > message.lastValue) ? "down" : "up"} for ${message.time}`);
+            (message.value > message.lastValue ? "[UP] " : "[DOWN] ") + type,
+            `${type} just went ${message.value > message.lastValue ? "up" : "down"}.
+            It has been ${message.value > message.lastValue ? "down" : "up"} for ${message.time}`);
     }
 }
 
@@ -20,11 +17,11 @@ function sendEmail(type, message) {
     _sendEmail({
         personalizations: [{
             to: [{
-                email: config.toEmail
+                email: process.env.toEmail
             }]
         }],
         from: {
-            email: config.fromEmail
+            email:  process.env.fromEmail
         },
         subject: `[Inverter] ${type}`,
         content: [{
@@ -35,8 +32,8 @@ function sendEmail(type, message) {
 }
 
 function _sendEmail(data) {
-    request('https://api.sendgrid.com/v3/mail/send', {
-        bearer: config.sendgrid_key,
+    request.request2('https://api.sendgrid.com/v3/mail/send', {
+        bearer:  process.env.sendgrid_key,
         json: data,
         method: 'POST'
     }, (res, err, body) => {

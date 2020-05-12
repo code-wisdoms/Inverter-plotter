@@ -9,6 +9,7 @@ const config = require('./lib/config'),
     bodyParser = require('body-parser'),
     logs = require('./lib/logs'),
     fs = require('fs'),
+    cookieParser = require('cookie-parser'),
     utils = require('./lib/utils'),
     logger = require('./lib/logger'),
     notifiers = require('./lib/notifier'),
@@ -23,8 +24,10 @@ const config = require('./lib/config'),
     uploadfile = multer({
         storage: storage
     });
-let csrfToken = [],
-    flagsData = [];
+let sessionsData = [],
+    flagsData = [],
+    notifEmailSent = false,
+    lastRowRecievedAt = new Date().getTime();
 
 logs.createTable(() => {
     logs.refreshFlags((err, rows) => {
@@ -35,7 +38,14 @@ logs.createTable(() => {
         });
     });
 });
-
+setInterval(() => {
+    logs.refreshFlags((err, rows) => {
+        err && console.log(err);
+        rows && rows.forEach(row => {
+            flagsData[row.name] = row;
+        });
+    });
+}, 60000);
 let app = express();
 const server = require('http').Server(app);
 
@@ -77,6 +87,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(cookieParser());
 app.use(function (req, res, next) {
     if (req.headers["x-forwarded-for"]) {
         let list = req.headers["x-forwarded-for"].split(",");
@@ -108,11 +119,167 @@ app.use(function (req, res, next) {
 
     next();
 });
+
+let adminArea = new express.Router();
+adminArea.use((req, res, next) => {
+    let euid = req.cookies['euid'];
+    if (euid && sessionsData[euid] && sessionsData[euid].loggedIn) {
+        next();
+    } else {
+        if (req.xhr) {
+            res.sendStatus(403).end();
+        } else {
+            res.redirect('/login');
+        }
+    }
+});
+adminArea.all('/logout', (req, res) => {
+    let euid = req.cookies['euid']
+    sessionsData[euid] = {};
+    delete sessionsData[euid];
+    res.clearCookie('euid');
+    res.redirect('/');
+});
+adminArea.get('/', (req, res) => {
+    res.redirect('/admin/notifications');
+});
+adminArea.get('/notifications', (req, res) => {
+    res.render('notifications-table', {
+        colNames: config.colNames,
+    });
+});
+adminArea.get('/notifications/delete/:name', (req, res) => {
+    logs.deleteFlag(req.params.name);
+    res.redirect('/admin/notifications');
+});
+adminArea.post('/notifications', (req, res) => {
+    if (req.body.edit) {
+        logs.updateFlag(req.body.column, req.body.variation);
+    } else {
+        logs.addFlag(req.body.column, req.body.variation);
+    }
+    res.redirect('/admin/notifications');
+});
+adminArea.post('/notif_table', (req, res) => {
+    if (!req.body) {
+        res.sendStatus(404).end();
+    } else {
+        let recordsTotal = 0;
+        let sqlQ = {};
+
+        if (!req.body.length) {
+            req.body.length = 10;
+        }
+        if (req.body.length < 0 || req.body.length > 100) {
+            req.body.length = 10;
+        }
+        if (!req.body.order || !req.body.columns) {
+            sqlQ.orderBy = 'dated';
+            sqlQ.dir = 'DESC';
+        } else {
+            sqlQ.orderBy = req.body.columns[req.body.order[0].column].data;
+            sqlQ.dir = req.body.order[0].dir;
+        }
+        if (!req.body.start) {
+            req.body.start = 0;
+        }
+        logs.select("SELECT COUNT(*) as count FROM flags", (err, row) => {
+            recordsTotal = row[0].count;
+        });
+        logs.select(`SELECT * FROM flags
+                ORDER BY ${sqlQ.orderBy} ${sqlQ.dir}
+                LIMIT ${req.body.length} OFFSET ${req.body.start}`, function (err, row) {
+            if (!err) {
+                let data = [];
+                row.forEach(item => {
+                    let dt = {};
+                    req.body.columns.forEach((col) => {
+                        if (col['data'] == 'changed') {
+                            item[col['data']] = new Date(item[col['data']]).toLocaleString('en-gb', {
+                                'dateStyle': 'short',
+                                'timeStyle': 'medium'
+                            });
+                        }
+                        if (col['data'] == 'actions') {
+                            item[col['data']] = `<a data-toggle="modal" href='#modal-edit'><span class="glyphicon glyphicon-pencil btnEdit" aria-hidden="true" data-name="${item.name}"></span></a>`
+                            item[col['data']] += `&nbsp;&nbsp;<a href="/admin/notifications/delete/${item.name}" onclick="alert('Are you sure you want to delete this entry?')"><span class="glyphicon glyphicon-trash" style="color:red;" aria-hidden="true"></span></a>`
+                        }
+                        dt[col['data']] = item[col['data']];
+                    });
+                    data.push(dt);
+                });
+                res.json({
+                    "draw": req.body.draw,
+                    "recordsFiltered": recordsTotal,
+                    "recordsTotal": recordsTotal,
+                    "data": data
+                });
+            } else {
+                res.json({
+                    status: 'error',
+                    message: err
+                });
+            }
+        });
+    }
+});
+adminArea.post('/getFlag', (req, res) => {
+    logs.select(`SELECT name, variation FROM flags WHERE name='${req.body.name}' LIMIT 1;`, (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.sendStatus(500).end();
+        } else {
+            res.json(rows[0]);
+        }
+    });
+});
+adminArea.get('/csv', (req, res) => {
+    res.render('csv');
+});
+adminArea.post('/csv', uploadfile.single('logfile'), (req, res) => {
+    logsToCSV(req.file.path, (file) => {
+        res.download(__dirname + '\\' + file, file.substr(file.indexOf('\\')));
+        setTimeout(() => {
+            fs.unlinkSync(__dirname + '\\' + file);
+        }, 20000);
+    });
+});
+adminArea.get('/upload', (req, res) => {
+    res.render('upload');
+});
+adminArea.post('/uploadfiles', uploadfile.array('logfile[]'), (req, res) => {
+    processLogs(req.files);
+    res.json({
+        status: 'success'
+    });
+});
+adminArea.get('/stats', (req, res) => {
+    res.json(logs.progress());
+});
+
 app.get('/', (req, res) => {
     res.render('live', {
         wsurl: `ws://${config.domain}:${config.port}`,
         tickLimit: config.lineGraphTickLimit
     })
+});
+app.use('/admin', adminArea);
+app.get('/login', (req, res) => {
+    res.render('password');
+});
+app.post('/login', (req, res) => {
+    if (req.body.password === config.password) {
+        let euid = utils.makeid(50);
+        sessionsData[euid] = {
+            loggedIn: true
+        };
+        res.cookie('euid', euid);
+        res.redirect('admin');
+    } else {
+        res.render('password', {
+            retry: true
+        })
+    }
 });
 app.get('/public/:subdir/:file', function (request, response) {
     response.setHeader('Cache-Control', 'public, max-age=604800');
@@ -121,34 +288,6 @@ app.get('/public/:subdir/:file', function (request, response) {
 app.get('/public/:subdir/:subdir2/:file', function (request, response) {
     response.setHeader('Cache-Control', 'public, max-age=604800');
     response.sendFile(`${__dirname}/public/${request.params.subdir}/${request.params.subdir2}/${request.params.file}`);
-});
-app.all('/csv', (req, res) => {
-    if (req.body && req.body.password && req.body.password == config.password) {
-        csrfToken[req.userId] = utils.makeid(25);
-        res.render('csv', {
-            token: csrfToken[req.userId]
-        });
-    } else {
-        res.render('password', {
-            retry: (req.body && req.body.password)
-        });
-    }
-});
-app.post('/csvfile', uploadfile.single('logfile'), (req, res) => {
-    if (req.body.token == csrfToken[req.userId]) {
-        delete csrfToken[req.userId];
-        logsToCSV(req.file.path, (file) => {
-            res.download(__dirname + '\\' + file, file.substr(file.indexOf('\\')));
-            setTimeout(() => {
-                fs.unlinkSync(__dirname + '\\' + file);
-            }, 20000);
-        });
-    } else {
-        res.json({
-            status: 'error',
-            message: 'invalid request'
-        });
-    }
 });
 app.get('/table', (req, res) => {
     res.render('table');
@@ -211,35 +350,6 @@ app.post('/table', (req, res) => {
             }
         });
     }
-});
-app.all('/upload', (req, res) => {
-    if (req.body && req.body.password && req.body.password == config.password) {
-        csrfToken[req.userId] = utils.makeid(25);
-        res.render('upload', {
-            token: csrfToken[req.userId]
-        });
-    } else {
-        res.render('password', {
-            retry: (req.body && req.body.password)
-        });
-    }
-});
-app.post('/uploadfiles', uploadfile.array('logfile[]'), (req, res) => {
-    if (req.body.token == csrfToken[req.userId]) {
-        delete csrfToken[req.userId];
-        processLogs(req.files);
-        res.json({
-            status: 'success'
-        });
-    } else {
-        res.json({
-            status: 'error',
-            message: 'invalid request'
-        });
-    }
-});
-app.get('/page/:name', (req, res) => {
-    res.sendFile(__dirname + '/views/pages/' + req.params.name + '.html');
 });
 app.get('/chart/:name', (req, res) => {
 
@@ -413,9 +523,6 @@ app.post('/chart/ann', (req, res) => {
         }
     });
 });
-app.get('/stats', (req, res) => {
-    res.json(logs.progress());
-});
 app.post("/inboundlogs", (req, res) => {
     if (req.body.secret === process.env.secret) {
         if (req.body.ping && req.body.getLast) {
@@ -433,6 +540,7 @@ app.post("/inboundlogs", (req, res) => {
             return;
         }
         if (req.body.row) {
+            lastRowRecievedAt = new Date().getTime();
             req.body.row = JSON.parse(req.body.row);
             if (req.body.row.length) {
                 let rowArr = req.body.row.map(row => {
@@ -482,6 +590,21 @@ app.post("/inboundlogs", (req, res) => {
 app.all('*', (req, res) => {
     res.sendStatus(404).end();
 });
+
+setInterval(() => {
+    if ((new Date().getTime() - lastRowRecievedAt) > 3e5) {
+        if (!notifEmailSent) {
+            notifiers.send('[Down] Tail', 'Tail server is down from last 5 minutes!');
+            notifEmailSent = true;
+        }
+        lastRowRecievedAt = new Date().getTime();
+    }
+}, 30000);
+
+/* Wait 20 minutes before sending another notificaiton */
+setInterval(() => {
+    notifEmailSent = false;
+}, 20 * 60 * 1000);
 
 function processLogs(files) {
     logs.setTotalFileNum(files.length);

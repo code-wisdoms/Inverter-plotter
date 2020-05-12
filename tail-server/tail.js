@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const Tail = require('tail').Tail,
     request = require('./lib/request'),
+    notifier = require('./lib/notifier'),
     logFilesPath = require('path').resolve(`${__dirname}/../`);
 
 let listener = {
@@ -11,7 +12,9 @@ let listener = {
 let tailMain = null,
     is_sending = false,
     logRows = [],
-    lastTimestamp = 0;
+    lastTimestamp = 0,
+    retryCount = 0,
+    notifEmailSent = false;
 
 request.sendToListener({
     ping: true,
@@ -28,6 +31,10 @@ request.sendToListener({
         process.exit(1);
     }
 });
+/* Wait 20 minutes before sending another notificaiton */
+setInterval(() => {
+    notifEmailSent = false;
+}, 20 * 60 * 1000);
 
 function start() {
     let newDate = new Date();
@@ -58,16 +65,25 @@ function sendRow(row) {
         row: JSON.stringify(row)
     }, function (res, err, body) {
         if (!err && body && body.success) {
+            retryCount = 0;
             if (logRows.length > 0) {
                 sendRow(logRows.splice(0, logRows.length > 500 ? 500 : logRows.length));
             } else {
                 is_sending = false;
             }
         } else {
-            console.log(`Error reaching listener server at ${listener.host}:${listener.port}. retrying in 3 seconds!`);
+            console.log(`Error reaching listener server at ${listener.host}:${listener.port}. retrying in 15 seconds!`);
             setTimeout(() => {
+                if (retryCount >= 20 /* 20 x 15 seconds of retry = 5 minutes */ ) {
+                    if (!notifEmailSent) {
+                        notifier.send('[Down] Main server', 'Main server is down from last 5 minutes!');
+                        notifEmailSent = true;
+                    }
+                    retryCount = 0;
+                }
+                retryCount++;
                 sendRow(row);
-            }, 30000);
+            }, 15000);
         }
     })
 }
