@@ -10,12 +10,16 @@
                 <tr>
                     <th>Name</th>
                     <th>Variation</th>
+                    <th>Minimum</th>
+                    <th>Maximum</th>
                     <th>Last Changed</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
+                    <td></td>
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
@@ -34,25 +38,74 @@
             </div>
             <div class="modal-body">
                 <form method="POST" role="form">
-                    <div class="form-group">
-                        <label for="inputColumns" class="col-md-4 control-label">Select Column:</label>
-                        <div class="col-md-8">
-                            <select name="column" id="inputColumns" class="form-control" required="required">
-                                <option value=""></option>
-                                {{#each colNames}}
-                                <option value="{{this}}">
-                                    {{this}}
-                                </option>
-                                {{/each}}
-                            </select>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="inputColumns" class="col-md-4 control-label">Select Column:</label>
+                            <div class="col-md-8">
+                                <select name="column" id="inputColumns" class="form-control" required="required">
+                                    <option value=""></option>
+                                    {{#each colNames}}
+                                    <option value="{{this}}">
+                                        {{this}}
+                                    </option>
+                                    {{/each}}
+                                </select>
+                            </div>
                         </div>
-                    </div><br><br>
-                    <div class="form-group">
-                        <label for="inputvariation" class="col-sm-4 control-label" data-toggle="tooltip"
-                            title="How much value should change before it will send email.">Notify on variation:</label>
-                        <div class="col-md-8">
-                            <input type="number" name="variation" id="inputvariation" class="form-control" value=""
-                                min="1" required="required">
+                    </div>
+                    <br>
+                    <div class="radiochoice">
+                        <div class="row">
+                            <div class="col-md-3 col-lg-3">
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="choice" value="variation" checked="checked">
+                                        Add Variation
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-lg-3">
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="choice" value="range">
+                                        Add Range
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="variation-block">
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="inputvariation" class="col-sm-4 control-label" data-toggle="tooltip"
+                                    title="How much value should change before it will send email.">Notify on
+                                    variation:</label>
+                                <div class="col-md-8">
+                                    <input type="number" name="variation" id="inputvariation" class="form-control"
+                                        value="" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="range-block" style="display: none;">
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="inputmin" class="col-sm-5 control-label">Notify on value lower than:</label>
+                                <div class="col-md-7">
+                                    <input type="number" name="min" id="inputmin" class="form-control" value="" min="1">
+                                </div>
+                            </div>
+                        </div><br>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="inputmax" class="col-sm-5 control-label" data-toggle="tooltip"
+                                    title="How much value should change before it will send email.">Notify on value
+                                    higher
+                                    than:</label>
+                                <div class="col-md-7">
+                                    <input type="number" name="max" id="inputmax" class="form-control" value="" min="1">
+                                </div>
+                            </div>
                         </div>
                     </div><br>
             </div>
@@ -72,21 +125,72 @@
             </div>
             <div class="modal-body">
                 <form method="POST" role="form">
-                    <div class="form-group">
-                        <label for="inputColumns" class="col-md-4 control-label">Select Column:</label>
-                        <div class="col-md-8">
-                            <input type="hidden" name="edit" class="form-control" value="true">
-                            <input type="hidden" name="column" class="form-control" value="">
-                            <input type="text" id="inputColname" class="form-control" value="" disabled>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="inputColumns" class="col-md-4 control-label">Select Column:</label>
+                            <div class="col-md-8">
+                                <input type="hidden" name="edit" class="form-control" value="true">
+                                <input type="hidden" name="column" class="form-control" value="">
+                                <input type="text" id="inputColname" class="form-control" value="" disabled>
+                            </div>
                         </div>
-                    </div><br><br>
-                    <div class="form-group">
-                        <label for="inputvariation" class="col-sm-4 control-label">Notify on variation:</label>
-                        <div class="col-md-8">
-                            <input type="number" name="variation" id="inputvariation" class="form-control" value=""
-                                min="1" required="required">
+                    </div>
+                    <br>
+                    <div class="radiochoice">
+                        <div class="row">
+                            <div class="col-md-3 col-lg-3">
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="choice" value="variation" checked="checked">
+                                        Add Variation
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-lg-3">
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="choice" value="range">
+                                        Add Range
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                    </div><br>
+                    </div>
+                    <div id="variation-block">
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="inputvariation" class="col-sm-4 control-label" data-toggle="tooltip"
+                                    title="How much value should change before it will send email.">Notify on
+                                    variation:</label>
+                                <div class="col-md-8">
+                                    <input type="number" name="variation" id="inputvariation" class="form-control"
+                                        value="" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="range-block" style="display: none;">
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="inputmin" class="col-sm-5 control-label">Notify on value lower than:</label>
+                                <div class="col-md-7">
+                                    <input type="number" name="min" id="inputmin" class="form-control" value="" min="1">
+                                </div>
+                            </div>
+                        </div><br>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="inputmax" class="col-sm-5 control-label" data-toggle="tooltip"
+                                    title="How much value should change before it will send email.">Notify on value
+                                    higher
+                                    than:</label>
+                                <div class="col-md-7">
+                                    <input type="number" name="max" id="inputmax" class="form-control" value="" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary">Submit</button>
@@ -95,8 +199,17 @@
         </div>
     </div>
 </div>
-
 <script>
+    $('.radiochoice').on('change', 'input', function () {
+        $modal = $(this).closest('.modal-body');
+        $modal.find('#variation-block').hide();
+        $modal.find('#range-block').hide();
+        if (this.value == 'variation') {
+            $modal.find('#variation-block').show();
+        } else {
+            $modal.find('#range-block').show();
+        }
+    });
     $('#mydatatable').DataTable({
         "order": [
             [0, "desc"]
@@ -123,6 +236,12 @@
             "title": "Variation",
             "data": "variation"
         }, {
+            "title": "Minimum",
+            "data": "min"
+        }, {
+            "title": "Maximum",
+            "data": "max"
+        }, {
             "title": "Last Changed",
             "data": "changed"
         }, {
@@ -131,6 +250,9 @@
         }]
     });
     $('#mydatatable').on('click', '.btnEdit', function () {
+        $('#modal-edit').find('input[type="number"]').each(function (i, item) {
+            item.value = 0
+        });
         $.ajax({
             type: "POST",
             url: "/admin/getFlag",
@@ -144,7 +266,7 @@
                 $('.loader').show();
             },
             error: function (jqxhr, txStatus, errThrown) {
-                alert("Error reaching server "  + errThrown);
+                alert("Error reaching server " + errThrown);
             },
             complete: function () {
                 $('.loader').hide();
@@ -152,7 +274,14 @@
             success: function (res) {
                 $('#modal-edit input[name="column"]').val(res.name);
                 $('#modal-edit #inputColname').val(res.name);
-                $('#modal-edit #inputvariation').val(res.variation);
+                if (res.variation) {
+                    $('#modal-edit input[value="variation"]').click();
+                    $('#modal-edit #inputvariation').val(res.variation);
+                } else {
+                    $('#modal-edit input[value="range"]').click();
+                    $('#modal-edit #inputmin').val(res.min);
+                    $('#modal-edit #inputmax').val(res.max);
+                }
             }
         });
     });

@@ -26,6 +26,7 @@ const config = require('./lib/config'),
     });
 let sessionsData = [],
     flagsData = [],
+    emailSentUnder5Mins = [],
     notifEmailSent = false,
     lastRowRecievedAt = new Date().getTime();
 
@@ -38,6 +39,15 @@ logs.createTable(() => {
         });
     });
 });
+/**
+ * Email cooldown
+ */
+setTimeout(() => {
+    emailSentUnder5Mins = [];
+}, 5 * 60 * 1000);
+/**
+ * Refresh flags
+ */
 setInterval(() => {
     logs.refreshFlags((err, rows) => {
         err && console.log(err);
@@ -154,10 +164,16 @@ adminArea.get('/notifications/delete/:name', (req, res) => {
     res.redirect('/admin/notifications');
 });
 adminArea.post('/notifications', (req, res) => {
-    if (req.body.edit) {
-        logs.updateFlag(req.body.column, req.body.variation);
+    if (req.body.choice == 'variation') {
+        req.body.min = 0;
+        req.body.max = 0;
     } else {
-        logs.addFlag(req.body.column, req.body.variation);
+        req.body.variation = 0;
+    }
+    if (req.body.edit) {
+        logs.updateFlag(req.body.column, req.body.variation, req.body.min, req.body.max);
+    } else {
+        logs.addFlag(req.body.column, req.body.variation, req.body.min, req.body.max);
     }
     res.redirect('/admin/notifications');
 });
@@ -225,7 +241,7 @@ adminArea.post('/notif_table', (req, res) => {
     }
 });
 adminArea.post('/getFlag', (req, res) => {
-    logs.select(`SELECT name, variation FROM flags WHERE name='${req.body.name}' LIMIT 1;`, (err, rows) => {
+    logs.select(`SELECT * FROM flags WHERE name='${req.body.name}' LIMIT 1;`, (err, rows) => {
         if (err) {
             console.log(err);
             res.sendStatus(500).end();
@@ -559,8 +575,25 @@ app.post("/inboundlogs", (req, res) => {
                     logs.insertSingle(rowArr);
                     ws_broadcast(JSON.stringify(rowArr));
                     config.colNames.forEach((element, index) => {
+                        rowArr[index] = parseFloat(rowArr[index]);
                         if (flagsData[element]) {
-                            if (Math.abs(flagsData[element].value - rowArr[index]) >= flagsData[element].variation) {
+                            if (flagsData[element].variation && !emailSentUnder5Mins[element]) {
+                                if (Math.abs(flagsData[element].value - rowArr[index]) >= flagsData[element].variation) {
+                                    let oldVal = flagsData[element].value;
+                                    flagsData[element].value = rowArr[index];
+                                    notifiers.send(
+                                        flagsData[element].name.replace(/\_/g, ' '),
+                                        Object.assign({
+                                            lastValue: oldVal,
+                                            time: utils.convertMS(new Date().getTime() - parseInt(flagsData[element].changed))
+                                        }, flagsData[element])
+                                    );
+                                    flagsData[element].changed = new Date().getTime();
+                                    logs.updateFlagValue(flagsData[element].name, rowArr[index]);
+                                    emailSentUnder5Mins[element] = true;
+                                }
+                            }
+                            if (flagsData[element].min && !emailSentUnder5Mins[element] && rowArr[index] != flagsData[element].value && rowArr[index] <= flagsData[element].min) {
                                 let oldVal = flagsData[element].value;
                                 flagsData[element].value = rowArr[index];
                                 notifiers.send(
@@ -571,7 +604,22 @@ app.post("/inboundlogs", (req, res) => {
                                     }, flagsData[element])
                                 );
                                 flagsData[element].changed = new Date().getTime();
-                                logs.updateFlag(flagsData[element].name, rowArr[index]);
+                                logs.updateFlagValue(flagsData[element].name, rowArr[index]);
+                                emailSentUnder5Mins[element] = true;
+                            }
+                            if (flagsData[element].max && !emailSentUnder5Mins[element] && rowArr[index] != flagsData[element].value && rowArr[index] >= flagsData[element].max) {
+                                let oldVal = flagsData[element].value;
+                                flagsData[element].value = rowArr[index];
+                                notifiers.send(
+                                    flagsData[element].name.replace(/\_/g, ' '),
+                                    Object.assign({
+                                        lastValue: oldVal,
+                                        time: utils.convertMS(new Date().getTime() - parseInt(flagsData[element].changed))
+                                    }, flagsData[element])
+                                );
+                                flagsData[element].changed = new Date().getTime();
+                                logs.updateFlagValue(flagsData[element].name, rowArr[index]);
+                                emailSentUnder5Mins[element] = true;
                             }
                         }
                     });
