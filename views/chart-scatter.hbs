@@ -81,13 +81,13 @@
                 $('.loader').hide();
             },
             success: function (res) {
-                if (res.status == 'success') {
+                if (res.success) {
                     var data = new google.visualization.DataTable();
                     data.addColumn('date', 'Date');
                     names.forEach(col => {
                         data.addColumn('number', col);
                     });
-                    let allData = res.map(function (item) {
+                    let allData = res.success.map(function (item) {
                         item = Object.values(item);
                         item[1] = new Date(item[1]);
                         let rowData = [];

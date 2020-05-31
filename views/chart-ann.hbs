@@ -83,13 +83,13 @@
                 alert(txStatus + errThrown);
             },
             success: function (res) {
-                if (res.status == 'success') {
+                if (res.success) {
                     var data = new google.visualization.DataTable();
                     data.addColumn('date', 'Date');
                     names.forEach(function (item) {
                         data.addColumn('number', item.replace(/\_/g, ' '));
                     });
-                    data.addRows(res.map((item) => {
+                    data.addRows(res.success.map((item) => {
                         item = Object.values(item);
                         item.pop();
                         item[0] = new Date(item[0]);

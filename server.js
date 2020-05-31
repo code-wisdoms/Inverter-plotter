@@ -401,29 +401,26 @@ app.post('/chart/bar', (req, res) => {
         req.body.todate = req.todaysDate;
     }
     if (req.body.fromdate && req.body.todate) {
-        let date = req.body.todate.split('-');
-        date[2] = parseInt(date[2]) + 1;
-        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${new Date(date.join('-')+" ").getTime()}`;
+        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${addADayMSToDate(req.body.todate)}`;
     } else {
         if (req.body.fromdate) {
             where += " WHERE dated >= " + new Date(req.body.fromdate + " ").getTime()
         }
         if (req.body.todate) {
-            let date = req.body.todate.split('-');
-            date[2] = parseInt(date[2]) + 1;
-            where += " WHERE dated <= " + new Date(date.join('-') + " ").getTime()
+            where += " WHERE dated <= " + addADayMSToDate(req.body.todate)
         }
     }
     where += " GROUP BY CAST(dateAdded AS DATE) ORDER BY dated ASC;";
 
     logs.select(where, function (err, row) {
         if (!err) {
-            res.json(row);
+            res.json({
+                success: row
+            });
         } else {
             console.log(err);
             res.json({
-                status: 'error',
-                message: err.message
+                error: err.message
             });
         }
     });
@@ -442,28 +439,25 @@ app.post('/chart/candle', (req, res) => {
         req.body.todate = req.todaysDate;
     }
     if (req.body.fromdate && req.body.todate) {
-        let date = req.body.todate.split('-');
-        date[2] = parseInt(date[2]) + 1;
-        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${new Date(date.join('-')+" ").getTime()}`;
+        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${addADayMSToDate(req.body.todate)}`;
     } else {
         if (req.body.fromdate) {
             where += " WHERE dated >= " + new Date(req.body.fromdate + " ").getTime()
         }
         if (req.body.todate) {
-            let date = req.body.todate.split('-');
-            date[2] = parseInt(date[2]) + 1;
-            where += " WHERE dated <= " + new Date(date.join('-') + " ").getTime()
+            where += " WHERE dated <= " + addADayMSToDate(req.body.todate)
         }
     }
     where += " GROUP BY CAST(dateAdded AS DATE) ORDER BY dated ASC;";
     logs.select(where, function (err, row) {
         if (!err) {
-            res.json(row);
+            res.json({
+                success: row
+            });
         } else {
             console.log(err);
             res.json({
-                status: 'error',
-                message: err.message
+                error: err.message
             });
         }
     });
@@ -507,17 +501,13 @@ app.post('/chart/ann', (req, res) => {
         req.body.todate = req.todaysDate;
     }
     if (req.body.fromdate && req.body.todate) {
-        let date = req.body.todate.split('-');
-        date[2] = parseInt(date[2]) + 1;
-        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${new Date(date.join('-')+" ").getTime()}`;
+        where += ` WHERE dated BETWEEN ${new Date(req.body.fromdate+" ").getTime()} AND ${addADayMSToDate(req.body.todate)}`;
     } else {
         if (req.body.fromdate) {
             where += " WHERE dated >= " + new Date(req.body.fromdate + " ").getTime()
         }
         if (req.body.todate) {
-            let date = req.body.todate.split('-');
-            date[2] = parseInt(date[2]) + 1;
-            where += " WHERE dated <= " + new Date(date.join('-') + " ").getTime()
+            where += " WHERE dated <= " + addADayMSToDate(req.body.todate)
         }
     }
     let cols = "";
@@ -536,12 +526,13 @@ app.post('/chart/ann', (req, res) => {
     GROUP BY strftime('${timeFrmtStr}', datetime(dated / 1000, 'unixepoch', 'localtime'))
     ORDER BY dated DESC;`, function (err, row) {
         if (!err) {
-            res.json(row);
+            res.json({
+                success: row
+            });
         } else {
             console.log(err);
             res.json({
-                status: 'error',
-                message: err.message
+                error: err.message
             });
         }
     });
@@ -709,4 +700,10 @@ function logsToCSV(file, callback) {
         fs.unlink(file, () => {});
         callback(csvFile);
     });
+}
+
+function addADayMSToDate(dateStr) {
+    let date = new Date(dateStr).getTime();
+    date += 9e+7;
+    return date;
 }

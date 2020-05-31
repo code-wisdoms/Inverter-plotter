@@ -64,8 +64,8 @@
                 $('.loader').hide();
             },
             success: function (res) {
-                if (res.status == 'success') {
-                    var data = google.visualization.arrayToDataTable(res.map(function (item) {
+                if (res.success) {
+                    var data = google.visualization.arrayToDataTable(res.success.map(function (item) {
                         item = Object.values(item);
                         return [item[0], item[1], item[1], item[2], item[2]]
                     }), true);
