@@ -102,10 +102,10 @@
                         displayZoomButtons: false
                     };
                     chart.draw(data, options);
+                } else {
+                    console.log(res);
+                    alert('There was an error getting data!');
                 }
-            } else {
-                console.log(res);
-                alert('There was an error getting data!');
             }
         });
     }

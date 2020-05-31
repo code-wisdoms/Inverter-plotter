@@ -77,10 +77,10 @@
                     };
                 var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));
                     chart.draw(data, options);
+                } else {
+                    console.log(res);
+                    alert("There was an error while getting data from server!");
                 }
-            } else {
-                console.log(res);
-                alert("There was an error while getting data from server!");
             }
         });
     }

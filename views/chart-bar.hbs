@@ -99,10 +99,10 @@
                     data.addRows(allData);
                     var chart = new google.charts.Bar(document.getElementById('chart_div'));
                     chart.draw(data);
+                } else {
+                    console.log(res);
+                    alert("There was an error getting data from server!");
                 }
-            } else {
-                console.log(res);
-                alert("There was an error getting data from server!");
             }
         });
     }
