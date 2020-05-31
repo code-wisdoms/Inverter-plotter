@@ -70,34 +70,39 @@
         $.ajax({
             type: "POST",
             data: formdata,
-            beforeSend: function(){
+            beforeSend: function () {
                 $('.loader').show();
             },
             error: function (jqxhr, txStatus, errThrown) {
                 alert(txStatus + errThrown);
             },
-            complete: function(){
+            complete: function () {
                 $('.loader').hide();
             },
             success: function (res) {
-                var data = new google.visualization.DataTable();
-                data.addColumn('string', 'Date');
-                names.forEach(col => {
-                    data.addColumn('number', col);
-                });
-                let allData = res.map(function (item) {
-                    item = Object.values(item);
-                    let rowData = [];
-                    item.forEach(function (val, i) {
-                        if (i != 1) {
-                            rowData.push(val);
-                        }
+                if (res.status == 'success') {
+                    var data = new google.visualization.DataTable();
+                    data.addColumn('string', 'Date');
+                    names.forEach(col => {
+                        data.addColumn('number', col);
                     });
-                    return rowData;
-                });
-                data.addRows(allData);
-                var chart = new google.charts.Bar(document.getElementById('chart_div'));
-                chart.draw(data);
+                    let allData = res.map(function (item) {
+                        item = Object.values(item);
+                        let rowData = [];
+                        item.forEach(function (val, i) {
+                            if (i != 1) {
+                                rowData.push(val);
+                            }
+                        });
+                        return rowData;
+                    });
+                    data.addRows(allData);
+                    var chart = new google.charts.Bar(document.getElementById('chart_div'));
+                    chart.draw(data);
+                }
+            } else {
+                console.log(res);
+                alert("There was an error getting data from server!");
             }
         });
     }

@@ -71,49 +71,54 @@
             type: "POST",
             data: formdata,
             url: '/chart/bar',
-            beforeSend: function(){
+            beforeSend: function () {
                 $('.loader').show();
             },
             error: function (jqxhr, txStatus, errThrown) {
                 alert(txStatus + errThrown);
             },
-            complete: function(){
+            complete: function () {
                 $('.loader').hide();
             },
             success: function (res) {
-                var data = new google.visualization.DataTable();
-                data.addColumn('date', 'Date');
-                names.forEach(col => {
-                    data.addColumn('number', col);
-                });
-                let allData = res.map(function (item) {
-                    item = Object.values(item);
-                    item[1] = new Date(item[1]);
-                    let rowData = [];
-                    item.forEach(function (val, i) {
-                        rowData.push(val);
+                if (res.status == 'success') {
+                    var data = new google.visualization.DataTable();
+                    data.addColumn('date', 'Date');
+                    names.forEach(col => {
+                        data.addColumn('number', col);
                     });
-                    rowData.shift();
-                    return rowData;
-                });
-                data.addRows(allData);
-                var chart = new google.visualization.ScatterChart(document.getElementById('chart_div'));
-                var opts = {
-                    legend: 'none',
-                    trendlines: {
-                        0: {
-                            type: 'linear',
-                            lineWidth: 5,
-                            opacity: .3
+                    let allData = res.map(function (item) {
+                        item = Object.values(item);
+                        item[1] = new Date(item[1]);
+                        let rowData = [];
+                        item.forEach(function (val, i) {
+                            rowData.push(val);
+                        });
+                        rowData.shift();
+                        return rowData;
+                    });
+                    data.addRows(allData);
+                    var chart = new google.visualization.ScatterChart(document.getElementById('chart_div'));
+                    var opts = {
+                        legend: 'none',
+                        trendlines: {
+                            0: {
+                                type: 'linear',
+                                lineWidth: 5,
+                                opacity: .3
+                            },
+                            1: {
+                                type: 'exponential',
+                                lineWidth: 10,
+                                opacity: .3
+                            }
                         },
-                        1: {
-                            type: 'exponential',
-                            lineWidth: 10,
-                            opacity: .3
-                        }
-                    },
-                };
-                chart.draw(data, opts);
+                    };
+                    chart.draw(data, opts);
+                }
+            } else {
+                console.log(res);
+                alert("There was an error while getting data from server!");
             }
         });
     }

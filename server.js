@@ -206,6 +206,7 @@ adminArea.post('/notif_table', (req, res) => {
             req.body.start = 0;
         }
         logs.select("SELECT COUNT(*) as count FROM flags", (err, row) => {
+            err && console.log(err);
             recordsTotal = row[0].count;
         });
         logs.select(`SELECT * FROM flags
@@ -237,9 +238,10 @@ adminArea.post('/notif_table', (req, res) => {
                     "data": data
                 });
             } else {
+                console.log(err);
                 res.json({
                     status: 'error',
-                    message: err
+                    message: err.message
                 });
             }
         });
@@ -334,6 +336,7 @@ app.post('/table', (req, res) => {
             req.body.start = 0;
         }
         logs.select("SELECT COUNT(*) as count {t}", (err, row) => {
+            err && console.log(err);
             recordsTotal = row[0].count;
         });
         logs.select(`SELECT * {t}
@@ -361,9 +364,10 @@ app.post('/table', (req, res) => {
                     "data": data
                 });
             } else {
+                console.log(err);
                 res.json({
                     status: 'error',
-                    message: err
+                    message: err.message
                 });
             }
         });
@@ -416,9 +420,10 @@ app.post('/chart/bar', (req, res) => {
         if (!err) {
             res.json(row);
         } else {
+            console.log(err);
             res.json({
                 status: 'error',
-                message: err
+                message: err.message
             });
         }
     });
@@ -455,9 +460,10 @@ app.post('/chart/candle', (req, res) => {
         if (!err) {
             res.json(row);
         } else {
+            console.log(err);
             res.json({
                 status: 'error',
-                message: err
+                message: err.message
             });
         }
     });
@@ -515,9 +521,7 @@ app.post('/chart/ann', (req, res) => {
         }
     }
     let cols = "";
-    let totalCols = 0;
     req.body.cols.forEach((item, ix) => {
-        totalCols++;
         if (req.body.type == 'd' && ['output_apparent_power', 'output_active_power'].includes(req.body.cols[ix])) {
             cols += ` (AVG(${item})*24)/1000 as col${ix+1},`;
         } else {
@@ -534,9 +538,10 @@ app.post('/chart/ann', (req, res) => {
         if (!err) {
             res.json(row);
         } else {
+            console.log(err);
             res.json({
                 status: 'error',
-                message: err
+                message: err.message
             });
         }
     });
@@ -545,6 +550,7 @@ app.post("/inboundlogs", (req, res) => {
     if (req.body.secret === process.env.secret) {
         if (req.body.ping && req.body.getLast) {
             logs.select('SELECT dated {t} ORDER BY dated DESC LIMIT 1;', function (err, row) {
+                err && console.log(err);
                 res.json({
                     pong: "true",
                     lastRow: JSON.stringify(row)

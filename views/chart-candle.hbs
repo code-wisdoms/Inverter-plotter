@@ -54,28 +54,33 @@
         $.ajax({
             type: "POST",
             data: formdata,
-            beforeSend: function(){
+            beforeSend: function () {
                 $('.loader').show();
             },
             error: function (jqxhr, txStatus, errThrown) {
                 alert(txStatus + errThrown);
             },
-            complete: function(){
+            complete: function () {
                 $('.loader').hide();
             },
             success: function (res) {
-                var data = google.visualization.arrayToDataTable(res.map(function (item) {
-                    item = Object.values(item);
-                    return [item[0], item[1], item[1], item[2], item[2]]
-                }), true);
-                var options = {
-                    legend: 'none',
-                    bar: {
-                        groupWidth: "95%"
-                    }
-                };
+                if (res.status == 'success') {
+                    var data = google.visualization.arrayToDataTable(res.map(function (item) {
+                        item = Object.values(item);
+                        return [item[0], item[1], item[1], item[2], item[2]]
+                    }), true);
+                    var options = {
+                        legend: 'none',
+                        bar: {
+                            groupWidth: "95%"
+                        }
+                    };
                 var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));
-                chart.draw(data, options);
+                    chart.draw(data, options);
+                }
+            } else {
+                console.log(res);
+                alert("There was an error while getting data from server!");
             }
         });
     }

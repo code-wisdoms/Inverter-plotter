@@ -83,24 +83,29 @@
                 alert(txStatus + errThrown);
             },
             success: function (res) {
-                var data = new google.visualization.DataTable();
-                data.addColumn('date', 'Date');
-                names.forEach(function (item) {
-                    data.addColumn('number', item.replace(/\_/g, ' '));
-                });
-                data.addRows(res.map((item) => {
-                    item = Object.values(item);
-                    item.pop();
-                    item[0] = new Date(item[0]);
-                    return item;
-                }));
-                var chart = new google.visualization.AnnotationChart(document.getElementById(
-                    'chart_div'));
-                var options = {
-                    displayAnnotations: true,
-                    displayZoomButtons: false
-                };
-                chart.draw(data, options);
+                if (res.status == 'success') {
+                    var data = new google.visualization.DataTable();
+                    data.addColumn('date', 'Date');
+                    names.forEach(function (item) {
+                        data.addColumn('number', item.replace(/\_/g, ' '));
+                    });
+                    data.addRows(res.map((item) => {
+                        item = Object.values(item);
+                        item.pop();
+                        item[0] = new Date(item[0]);
+                        return item;
+                    }));
+                    var chart = new google.visualization.AnnotationChart(document.getElementById(
+                        'chart_div'));
+                    var options = {
+                        displayAnnotations: true,
+                        displayZoomButtons: false
+                    };
+                    chart.draw(data, options);
+                }
+            } else {
+                console.log(res);
+                alert('There was an error getting data!');
             }
         });
     }
