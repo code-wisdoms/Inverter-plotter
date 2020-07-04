@@ -703,7 +703,7 @@ function logsToCSV(file, callback) {
 }
 
 function addADayMSToDate(dateStr) {
-    let date = new Date(dateStr).getTime();
-    date += 9e+7;
+    let date = new Date(dateStr+ " ").getTime();
+    date += 86399e+3;
     return date;
 }
