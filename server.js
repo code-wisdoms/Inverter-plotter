@@ -28,6 +28,7 @@ let sessionsData = [],
     flagsData = [],
     emailSentUnder5Mins = [],
     notifEmailSent = false,
+    graphCache = [],
     lastRowRecievedAt = new Date().getTime();
 
 logs.createTable(() => {
@@ -69,12 +70,17 @@ io.on('connection', (socket) => {
             logger.log(`${socket.handshake.address} - Socket - ${data}`);
         }
     });
+    (graphCache.length > 1) && io.emit('history', graphCache);
     socket.on('message', function (data) {
         logger.log(`[Socket][MESSAGE] - ${data}`);
     });
 });
 
 function ws_broadcast(data) {
+    graphCache.push(data);
+    if (graphCache.length > config.lineGraphTickLimit) {
+        graphCache.shift();
+    }
     io.emit('data', data);
 }
 app.engine('hbs', handlebars({
@@ -703,7 +709,7 @@ function logsToCSV(file, callback) {
 }
 
 function addADayMSToDate(dateStr) {
-    let date = new Date(dateStr+ " ").getTime();
+    let date = new Date(dateStr + " ").getTime();
     date += 86399e+3;
     return date;
 }

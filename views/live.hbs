@@ -200,7 +200,17 @@
         }]
     }));
     window.charttick = 0
-
+    function populateLineGraph(data){        
+        lineChart.series[0].addPoint([data[21], parseInt(data[5])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+        lineChart.series[1].addPoint([data[21], parseInt(data[6])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+        lineChart.series[2].addPoint([data[21], parseFloat(data[0])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+        lineChart.series[3].addPoint([data[21], parseFloat(data[8])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+        lineChart.series[4].addPoint([data[21], parseInt(data[11])], false, (window.charttick > lineTickLimit || window.charttick == 1));
+        lineChart.redraw();
+        if (window.charttick <= lineTickLimit) {
+            window.charttick++;
+        }
+    }
     function connect() {
         const socket = io.connect('{{wsurl}}');
         socket.on('connect', () => {
@@ -212,21 +222,21 @@
         * see file socket_out_format.txt in root for column order 
         */
         socket.on('data', (data) => {
-            var data = JSON.parse(data);
-            lineChart.series[0].addPoint([data[21], parseInt(data[5])], false, (window.charttick > lineTickLimit || window.charttick == 1));
-            lineChart.series[1].addPoint([data[21], parseInt(data[6])], false, (window.charttick > lineTickLimit || window.charttick == 1));
-            lineChart.series[2].addPoint([data[21], parseFloat(data[0])], false, (window.charttick > lineTickLimit || window.charttick == 1));
-            lineChart.series[3].addPoint([data[21], parseFloat(data[8])], false, (window.charttick > lineTickLimit || window.charttick == 1));
-            lineChart.series[4].addPoint([data[21], parseInt(data[11])], false, (window.charttick > lineTickLimit || window.charttick == 1));
-            lineChart.redraw();
-            if (window.charttick <= lineTickLimit) {
-                window.charttick++;
-            }
+            data = JSON.parse(data);
+            populateLineGraph(data);
             tempChart.series[0].points[0].update(parseInt(data[11]));
             voltGauge.series[0].points[0].update(parseFloat(data[0]));
             $('.voltReading>.text').text(parseFloat(data[0]));
             loadGaugesChart1.series[0].points[0].update(parseInt(data[6]));
             loadGaugesChart2.series[0].points[0].update(parseInt(data[5]));
+        });
+        socket.on('history', (rows)=>{
+            rows = JSON.parse(rows);
+            if(Array.isArray(rows) && rows.length){
+                rows.forEach((data)=>{
+                    populateLineGraph(data);
+                });
+            }
         });
         socket.on('disconnect', () => {
             setTimeout(function () {
