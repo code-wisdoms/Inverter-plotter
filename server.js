@@ -70,7 +70,7 @@ io.on('connection', (socket) => {
             logger.log(`${socket.handshake.address} - Socket - ${data}`);
         }
     });
-    (graphCache.length > 1) && io.emit('history', graphCache);
+    (graphCache.length > 1) && io.emit('history', JSON.stringify(graphCache));
     socket.on('message', function (data) {
         logger.log(`[Socket][MESSAGE] - ${data}`);
     });
