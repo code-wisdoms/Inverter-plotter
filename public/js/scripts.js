@@ -100,41 +100,31 @@ var lineChartOpts = {
         name: 'Active Out Power',
         type: 'spline',
         yAxis: 1,
-        data: [0],
-        pointStart: new Date().getTime(),
         tooltip: {
             valueSuffix: ' W'
         }
     }, {
         name: 'Load',
         type: 'spline',
-        data: [0],
-        pointStart: new Date().getTime(),
         tooltip: {
             valueSuffix: '%'
         }
     }, {
         name: 'Grid Voltage',
         type: 'spline',
-        data: [0],
         yAxis: 1,
-        pointStart: new Date().getTime(),
         tooltip: {
             valueSuffix: ' V'
         }
     }, {
         name: 'Battery Voltage',
         type: 'spline',
-        data: [0],
-        pointStart: new Date().getTime(),
         tooltip: {
             valueSuffix: ' V'
         }
     }, {
         name: 'Inverter Temperature',
         type: 'spline',
-        data: [0],
-        pointStart: new Date().getTime(),
         tooltip: {
             valueSuffix: '°C'
         }

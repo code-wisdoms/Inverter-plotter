@@ -1,90 +1,4 @@
-<style>
-    .gauge-text {
-        margin-right: 40px
-    }
-
-    .pl-10 {
-        padding-left: 10rem
-    }
-
-    .pr-2 {
-        padding-right: 2rem
-    }
-
-    .blinking {
-        -webkit-animation: 2s blink ease infinite;
-        -moz-animation: 2s blink ease infinite;
-        -ms-animation: 2s blink ease infinite;
-        -o-animation: 2s blink ease infinite;
-        animation: 2s blink ease infinite
-    }
-
-    @keyframes "blink" {
-
-        from,
-        to {
-            opacity: 0
-        }
-
-        50% {
-            opacity: 1
-        }
-    }
-
-    @-moz-keyframes blink {
-
-        from,
-        to {
-            opacity: 0
-        }
-
-        50% {
-            opacity: 1
-        }
-    }
-
-    @-webkit-keyframes "blink" {
-
-        from,
-        to {
-            opacity: 0
-        }
-
-        50% {
-            opacity: 1
-        }
-    }
-
-    @-ms-keyframes "blink" {
-
-        from,
-        to {
-            opacity: 0
-        }
-
-        50% {
-            opacity: 1
-        }
-    }
-
-    @-o-keyframes "blink" {
-
-        from,
-        to {
-            opacity: 0
-        }
-
-        50% {
-            opacity: 1
-        }
-    }
-    .voltReading{
-        margin-left: 50px;
-        font-size: large;
-    font-size: 25px;
-    color: black;
-    }
-</style>
+<style>.gauge-text{margin-right:40px}.pl-10{padding-left:10rem}.pr-2{padding-right:2rem}.blinking{-webkit-animation:2s blink ease infinite;-moz-animation:2s blink ease infinite;-ms-animation:2s blink ease infinite;-o-animation:2s blink ease infinite;animation:2s blink ease infinite}@keyframes blink{from,to{opacity:0}50%{opacity:1}}@-moz-keyframes blink{from,to{opacity:0}50%{opacity:1}}@-webkit-keyframes blink{from,to{opacity:0}50%{opacity:1}}@-ms-keyframes blink{from,to{opacity:0}50%{opacity:1}}@-o-keyframes blink{from,to{opacity:0}50%{opacity:1}}.voltReading{margin-left:50px;font-size:large;font-size:25px;color:#000}</style>
 <div class="row mt-2">
     <div class="row" style="position: absolute;
     right: 0%;
@@ -200,13 +114,13 @@
         }]
     }));
     window.charttick = 0
-    function populateLineGraph(data){        
+    function populateLineGraph(data, dontredraw){        
         lineChart.series[0].addPoint([data[21], parseInt(data[5])], false, (window.charttick > lineTickLimit || window.charttick == 1));
         lineChart.series[1].addPoint([data[21], parseInt(data[6])], false, (window.charttick > lineTickLimit || window.charttick == 1));
         lineChart.series[2].addPoint([data[21], parseFloat(data[0])], false, (window.charttick > lineTickLimit || window.charttick == 1));
         lineChart.series[3].addPoint([data[21], parseFloat(data[8])], false, (window.charttick > lineTickLimit || window.charttick == 1));
         lineChart.series[4].addPoint([data[21], parseInt(data[11])], false, (window.charttick > lineTickLimit || window.charttick == 1));
-        lineChart.redraw();
+        if(!dontredraw){lineChart.redraw();}
         if (window.charttick <= lineTickLimit) {
             window.charttick++;
         }
@@ -234,7 +148,8 @@
             rows = JSON.parse(rows);
             if(Array.isArray(rows) && rows.length){
                 rows.forEach((data)=>{
-                    populateLineGraph(data);
+                    data = JSON.parse(data);
+                    populateLineGraph(data, true);
                 });
             }
         });
